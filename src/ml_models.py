@@ -23,9 +23,9 @@ def train_eligibility_model(df):
     """
     # Vérifier que les colonnes nécessaires existent
     required_columns = ['age', 'sexe', 'profession', 'condition_sante', 'eligible']
-    for col in required_columns:
-        if col not in df.columns:
-            raise ValueError(f"La colonne {col} est nécessaire pour l'entraînement du modèle mais n'existe pas dans les données")
+    missing_columns = [col for col in required_columns if col not in df.columns]
+    if missing_columns:
+        raise ValueError(f"Colonnes manquantes pour l'entraînement du modèle: {missing_columns}")
     
     # Sélectionner les caractéristiques et la cible
     X = df[['age', 'sexe', 'profession', 'condition_sante']]
@@ -87,16 +87,3 @@ def predict_eligibility(model, input_data):
         "probability": float(probability),
         "message": "Éligible au don de sang" if prediction else "Non éligible au don de sang"
     }
-
-def load_model():
-    """
-    Charge le modèle entraîné s'il existe, sinon retourne None.
-    
-    Returns:
-        sklearn.pipeline.Pipeline or None: Le modèle chargé ou None
-    """
-    model_path = 'model/eligibility_model.pkl'
-    
-    if os.path.exists(model_path):
-        return joblib.load(model_path)
-    return None

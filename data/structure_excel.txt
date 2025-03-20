@@ -1,0 +1,101 @@
+Feuilles dans le fichier: ['Candidat au don 2019 (avec anne', 'Donneurs 2019', 'Candidat au don 2019  (avec age']
+
+--- Feuille: Candidat au don 2019 (avec anne ---
+Nombre de lignes: 1915
+Colonnes: ['Date de remplissage de la fiche', 'Date de naissance', "Niveau d'etude", 'Genre', 'Taille', 'Poids', 'Situation Matrimoniale (SM)', 'Profession', 'Arrondissement de résidence', 'Quartier de Résidence', 'Nationalité', 'Religion', 'A-t-il (elle) déjà donné le sang', 'Si oui preciser la date du dernier don.', 'Taux d’hémoglobine', 'ÉLIGIBILITÉ AU DON.', 'Raison indisponibilité  [Est sous anti-biothérapie  ]', 'Raison indisponibilité  [Taux d’hémoglobine bas ]', 'Raison indisponibilité  [date de dernier Don < 3 mois ]', 'Raison indisponibilité  [IST récente (Exclu VIH, Hbs, Hcv)]', 'Date de dernières règles (DDR) ', 'Raison de l’indisponibilité de la femme [La DDR est mauvais si <14 jour avant le don]', 'Raison de l’indisponibilité de la femme [Allaitement ]', 'Raison de l’indisponibilité de la femme [A accoucher ces 6 derniers mois  ]', 'Raison de l’indisponibilité de la femme [Interruption de grossesse  ces 06 derniers mois]', 'Raison de l’indisponibilité de la femme [est enceinte ]', 'Autre raisons,  preciser', 'Sélectionner "ok" pour envoyer', 'Raison de non-eligibilité totale  [Antécédent de transfusion]', 'Raison de non-eligibilité totale  [Porteur(HIV,hbs,hcv)]', 'Raison de non-eligibilité totale  [Opéré]', 'Raison de non-eligibilité totale  [Drepanocytaire]', 'Raison de non-eligibilité totale  [Diabétique]', 'Raison de non-eligibilité totale  [Hypertendus]', 'Raison de non-eligibilité totale  [Asthmatiques]', 'Raison de non-eligibilité totale  [Cardiaque]', 'Raison de non-eligibilité totale  [Tatoué]', 'Raison de non-eligibilité totale  [Scarifié]', 'Si autres raison préciser']
+Types de données:
+  - Date de remplissage de la fiche: object
+  - Date de naissance: object
+  - Niveau d'etude: object
+  - Genre: object
+  - Taille: float64
+  - Poids: float64
+  - Situation Matrimoniale (SM): object
+  - Profession: object
+  - Arrondissement de résidence: object
+  - Quartier de Résidence: object
+  - Nationalité: object
+  - Religion: object
+  - A-t-il (elle) déjà donné le sang: object
+  - Si oui preciser la date du dernier don.: object
+  - Taux d’hémoglobine: object
+  - ÉLIGIBILITÉ AU DON.: object
+  - Raison indisponibilité  [Est sous anti-biothérapie  ]: object
+  - Raison indisponibilité  [Taux d’hémoglobine bas ]: object
+  - Raison indisponibilité  [date de dernier Don < 3 mois ]: object
+  - Raison indisponibilité  [IST récente (Exclu VIH, Hbs, Hcv)]: object
+  - Date de dernières règles (DDR) : datetime64[ns]
+  - Raison de l’indisponibilité de la femme [La DDR est mauvais si <14 jour avant le don]: object
+  - Raison de l’indisponibilité de la femme [Allaitement ]: object
+  - Raison de l’indisponibilité de la femme [A accoucher ces 6 derniers mois  ]: object
+  - Raison de l’indisponibilité de la femme [Interruption de grossesse  ces 06 derniers mois]: object
+  - Raison de l’indisponibilité de la femme [est enceinte ]: object
+  - Autre raisons,  preciser: object
+  - Sélectionner "ok" pour envoyer: object
+  - Raison de non-eligibilité totale  [Antécédent de transfusion]: object
+  - Raison de non-eligibilité totale  [Porteur(HIV,hbs,hcv)]: object
+  - Raison de non-eligibilité totale  [Opéré]: object
+  - Raison de non-eligibilité totale  [Drepanocytaire]: object
+  - Raison de non-eligibilité totale  [Diabétique]: object
+  - Raison de non-eligibilité totale  [Hypertendus]: object
+  - Raison de non-eligibilité totale  [Asthmatiques]: object
+  - Raison de non-eligibilité totale  [Cardiaque]: object
+  - Raison de non-eligibilité totale  [Tatoué]: object
+  - Raison de non-eligibilité totale  [Scarifié]: object
+  - Si autres raison préciser: object
+
+--- Feuille: Donneurs 2019 ---
+Nombre de lignes: 1900
+Colonnes: ['Horodateur', 'Sexe', 'Age ', 'Type de donation ', 'Groupe Sanguin ABO / Rhesus ', 'Phenotype ']
+Types de données:
+  - Horodateur: datetime64[ns]
+  - Sexe: object
+  - Age : object
+  - Type de donation : object
+  - Groupe Sanguin ABO / Rhesus : object
+  - Phenotype : object
+
+--- Feuille: Candidat au don 2019  (avec age ---
+Nombre de lignes: 1846
+Colonnes: ['ID', 'Age', 'Horodateur', "Niveau_d'etude", 'Genre_', 'Taille_', 'Poids', 'Situation_Matrimoniale_(SM)', 'Profession_', 'Arrondissement_de_résidence_', 'Quartier_de_Résidence_', 'Nationalité_', 'Religion_', 'A-t-il_(elle)_déjà_donné_le_sang_', 'Si_oui_preciser_la_date_du_dernier_don._', 'Taux_d’hémoglobine_', 'ÉLIGIBILITÉ_AU_DON.', 'Raison_indisponibilité__[Est_sous_anti-biothérapie__]', 'Raison_indisponibilité__[Taux_d’hémoglobine_bas_]', 'Raison_indisponibilité__[date_de_dernier_Don_<_3_mois_]', 'Raison_indisponibilité__[IST_récente_(Exclu_VIH,_Hbs,_Hcv)]', 'Date_de_dernières_règles_(DDR)__', 'Raison_de_l’indisponibilité_de_la_femme_[La_DDR_est_mauvais_si_<14_jour_avant_le_don]', 'Raison_de_l’indisponibilité_de_la_femme_[Allaitement_]', 'Raison_de_l’indisponibilité_de_la_femme_[A_accoucher_ces_6_derniers_mois__]', 'Raison_de_l’indisponibilité_de_la_femme_[Interruption_de_grossesse__ces_06_derniers_mois]', 'Raison_de_l’indisponibilité_de_la_femme_[est_enceinte_]', 'Autre_raisons,__preciser_', 'Sélectionner_"ok"_pour_envoyer_', 'Raison_de_non-eligibilité_totale__[Antécédent_de_transfusion]', 'Raison_de_non-eligibilité_totale__[Porteur(HIV,hbs,hcv)]', 'Raison_de_non-eligibilité_totale__[Opéré]', 'Raison_de_non-eligibilité_totale__[Drepanocytaire]', 'Raison_de_non-eligibilité_totale__[Diabétique]', 'Raison_de_non-eligibilité_totale__[Hypertendus]', 'Raison_de_non-eligibilité_totale__[Asthmatiques]', 'Raison_de_non-eligibilité_totale__[Cardiaque]', 'Raison_de_non-eligibilité_totale__[Tatoué]', 'Raison_de_non-eligibilité_totale__[Scarifié]', 'Si_autres_raison_préciser_']
+Types de données:
+  - ID: object
+  - Age: int64
+  - Horodateur: object
+  - Niveau_d'etude: object
+  - Genre_: object
+  - Taille_: float64
+  - Poids: float64
+  - Situation_Matrimoniale_(SM): object
+  - Profession_: object
+  - Arrondissement_de_résidence_: object
+  - Quartier_de_Résidence_: object
+  - Nationalité_: object
+  - Religion_: object
+  - A-t-il_(elle)_déjà_donné_le_sang_: object
+  - Si_oui_preciser_la_date_du_dernier_don._: object
+  - Taux_d’hémoglobine_: object
+  - ÉLIGIBILITÉ_AU_DON.: object
+  - Raison_indisponibilité__[Est_sous_anti-biothérapie__]: object
+  - Raison_indisponibilité__[Taux_d’hémoglobine_bas_]: object
+  - Raison_indisponibilité__[date_de_dernier_Don_<_3_mois_]: object
+  - Raison_indisponibilité__[IST_récente_(Exclu_VIH,_Hbs,_Hcv)]: object
+  - Date_de_dernières_règles_(DDR)__: object
+  - Raison_de_l’indisponibilité_de_la_femme_[La_DDR_est_mauvais_si_<14_jour_avant_le_don]: object
+  - Raison_de_l’indisponibilité_de_la_femme_[Allaitement_]: object
+  - Raison_de_l’indisponibilité_de_la_femme_[A_accoucher_ces_6_derniers_mois__]: object
+  - Raison_de_l’indisponibilité_de_la_femme_[Interruption_de_grossesse__ces_06_derniers_mois]: object
+  - Raison_de_l’indisponibilité_de_la_femme_[est_enceinte_]: object
+  - Autre_raisons,__preciser_: object
+  - Sélectionner_"ok"_pour_envoyer_: object
+  - Raison_de_non-eligibilité_totale__[Antécédent_de_transfusion]: object
+  - Raison_de_non-eligibilité_totale__[Porteur(HIV,hbs,hcv)]: object
+  - Raison_de_non-eligibilité_totale__[Opéré]: object
+  - Raison_de_non-eligibilité_totale__[Drepanocytaire]: object
+  - Raison_de_non-eligibilité_totale__[Diabétique]: object
+  - Raison_de_non-eligibilité_totale__[Hypertendus]: object
+  - Raison_de_non-eligibilité_totale__[Asthmatiques]: object
+  - Raison_de_non-eligibilité_totale__[Cardiaque]: object
+  - Raison_de_non-eligibilité_totale__[Tatoué]: object
+  - Raison_de_non-eligibilité_totale__[Scarifié]: object
+  - Si_autres_raison_préciser_: object

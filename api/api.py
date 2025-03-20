@@ -49,8 +49,6 @@ async def predict_eligibility(data: DonorData):
     try:
         # Vérifier si le modèle est chargé
         if model is None:
-            # Si le modèle n'est pas chargé, on peut le créer à la demande
-            # ou renvoyer une erreur
             raise HTTPException(
                 status_code=503, 
                 detail="Le modèle n'est pas encore disponible. Veuillez d'abord exécuter l'entraînement dans le tableau de bord."

@@ -7,150 +7,67 @@ import os
 @st.cache_data
 def load_and_process_data(filepath):
     """
-    Charge et prétraite les données des campagnes de don de sang.
-    Adaptation spécifique pour le dataset du challenge.
+    Charge les données prétraitées ou tente de charger le fichier original.
+    Version simplifiée qui privilégie le fichier prétraité.
     
     Args:
-        filepath (str): Chemin vers le fichier Excel des données
+        filepath (str): Chemin vers le fichier de données (Excel ou CSV)
         
     Returns:
-        pd.DataFrame: DataFrame nettoyé et prétraité
+        pd.DataFrame: DataFrame prétraité
     """
     try:
-        # Vérifier si le fichier est un Excel (avec plusieurs feuilles)
+        # Vérifier si un fichier prétraité existe
+        preprocessed_file = "/data/preprocessed_data.csv"
+        
+        if os.path.exists(preprocessed_file):
+            st.success(f"Utilisation du fichier prétraité: {preprocessed_file}")
+            df = pd.read_csv(preprocessed_file)
+            return df
+        
+        # Si le fichier prétraité n'existe pas, essayer de prétraiter maintenant
+        st.info("Fichier prétraité non trouvé. Prétraitement en cours...")
+        
+        # Importer la fonction de prétraitement et l'exécuter
+        from data_preprocessing import preprocess_excel_file
+        preprocess_excel_file()
+        
+        # Vérifier si le prétraitement a créé le fichier
+        if os.path.exists(preprocessed_file):
+            st.success("Prétraitement réussi. Chargement des données prétraitées.")
+            df = pd.read_csv(preprocessed_file)
+            return df
+        
+        # Si toujours pas de fichier prétraité, essayer de charger le fichier original
+        st.warning("Échec du prétraitement. Tentative de chargement direct...")
+        
         if filepath.endswith('.xlsx') or filepath.endswith('.xls'):
-            # Charger les deux feuilles principales
-            df_2019 = pd.read_excel(filepath, sheet_name='Sheet 2019')
-            df_volontaire = pd.read_excel(filepath, sheet_name='Sheet Volontaire')
-            
-            # Fusionner les données si nécessaire ou choisir une des feuilles
-            # Pour cet exemple, nous allons utiliser la feuille 'Sheet Volontaire'
-            df = df_volontaire
-        else:
-            # Si c'est un CSV ou autre format
-            df = pd.read_csv(filepath)
-        
-        # Renommer les colonnes pour faciliter le traitement
-        column_mapping = {
-            'ID': 'id_donneur',
-            'Age': 'age',
-            'Horodateur': 'date_don',
-            'Niveau_d\'etude': 'niveau_etude',
-            'Genre_': 'sexe',
-            'Taille_': 'taille',
-            'Poids': 'poids',
-            'Situation_Matrimoniale_(SM)': 'situation_matrimoniale',
-            'Profession_': 'profession',
-            'Arrondissement_de_résidence_': 'arrondissement',
-            'Quartier_de_Résidence_': 'quartier',
-        }
-        
-        # Appliquer le mapping seulement pour les colonnes qui existent
-        for old_col, new_col in column_mapping.items():
-            if old_col in df.columns:
-                df = df.rename(columns={old_col: new_col})
-        
-        # Traiter les colonnes d'éligibilité
-        health_conditions = [
-            'Raison_de_non-eligibilité_totale__[Porteur(HIV,hbs,hcv)]',
-            'Raison_de_non-eligibilité_totale__[Opéré]',
-            'Raison_de_non-eligibilité_totale__[Drepanocytaire]',
-            'Raison_de_non-eligibilité_totale__[Diabétique]',
-            'Raison_de_non-eligibilité_totale__[Hypertendus]',
-            'Raison_de_non-eligibilité_totale__[Asthmatiques]',
-            'Raison_de_non-eligibilité_totale__[Cardiaque]',
-            'Raison_de_non-eligibilité_totale__[Tatoué]',
-            'Raison_de_non-eligibilité_totale__[Scarifié]'
-        ]
-        
-        # Créer des colonnes pour chaque condition de santé
-        for condition in health_conditions:
-            short_name = condition.split('[')[-1].replace(']', '').lower().strip()
-            if condition in df.columns:
-                # Convertir les réponses en booléen (1 pour Oui, 0 pour Non)
-                df[short_name] = df[condition].apply(
-                    lambda x: 1 if isinstance(x, str) and x.lower() in ['oui', 'yes', '1'] else 0
-                )
-        
-        # Créer une colonne d'éligibilité
-        # Un donneur est non éligible s'il a au moins une des conditions de non-éligibilité
-        if 'porteur(hiv,hbs,hcv)' in df.columns:
-            df['eligible'] = ~(
-                (df['porteur(hiv,hbs,hcv)'] == 1) | 
-                (df['drepanocytaire'] == 1) |
-                (df['opéré'] == 1)  # On considère qu'une opération récente rend non éligible
-            )
-            df['eligible'] = df['eligible'].astype(int)
-        else:
-            # Si les colonnes spécifiques n'existent pas, créer une colonne factice
-            df['eligible'] = np.random.choice([0, 1], size=len(df), p=[0.2, 0.8])
-        
-        # Traiter la colonne de date
-        if 'date_don' in df.columns:
+            # Tenter de charger la feuille appropriée
+            sheet_name = 'Candidat au don 2019  (avec age'
             try:
-                df['date_don'] = pd.to_datetime(df['date_don'], errors='coerce')
+                df = pd.read_excel(filepath, sheet_name=sheet_name)
             except:
-                # Si conversion échoue, garder tel quel
-                pass
-        
-        # Gérer les valeurs manquantes
-        if 'age' in df.columns:
-            df['age'] = df['age'].fillna(df['age'].median())
-        if 'sexe' in df.columns:
-            df['sexe'] = df['sexe'].fillna(df['sexe'].mode()[0])
-        if 'profession' in df.columns:
-            df['profession'] = df['profession'].fillna('Non spécifié')
-        if 'taille' in df.columns:
-            df['taille'] = pd.to_numeric(df['taille'], errors='coerce')
-            df['taille'] = df['taille'].fillna(df['taille'].median())
-        if 'poids' in df.columns:
-            df['poids'] = pd.to_numeric(df['poids'], errors='coerce')
-            df['poids'] = df['poids'].fillna(df['poids'].median())
-        
-        # Créer une colonne 'condition_sante' basée sur les drapeaux de santé
-        df['condition_sante'] = 'Aucune'
-        if 'porteur(hiv,hbs,hcv)' in df.columns and df['porteur(hiv,hbs,hcv)'].sum() > 0:
-            df.loc[df['porteur(hiv,hbs,hcv)'] == 1, 'condition_sante'] = 'Porteur HIV/HBS/HCV'
-        if 'diabétique' in df.columns and df['diabétique'].sum() > 0:
-            df.loc[df['diabétique'] == 1, 'condition_sante'] = 'Diabétique'
-        if 'hypertendus' in df.columns and df['hypertendus'].sum() > 0:
-            df.loc[df['hypertendus'] == 1, 'condition_sante'] = 'Hypertendu'
-        if 'asthmatiques' in df.columns and df['asthmatiques'].sum() > 0:
-            df.loc[df['asthmatiques'] == 1, 'condition_sante'] = 'Asthmatique'
-        if 'cardiaque' in df.columns and df['cardiaque'].sum() > 0:
-            df.loc[df['cardiaque'] == 1, 'condition_sante'] = 'Cardiaque'
-        if 'drepanocytaire' in df.columns and df['drepanocytaire'].sum() > 0:
-            df.loc[df['drepanocytaire'] == 1, 'condition_sante'] = 'Drépanocytaire'
-        
-        # Traiter la colonne de commentaires
-        comment_column = 'Si_autres_raison_préciser_'
-        if comment_column in df.columns:
-            df = df.rename(columns={comment_column: 'commentaire'})
-        
-        # Vérifier si les colonnes d'arrondissement et quartier existent
-        if 'arrondissement' not in df.columns:
-            df['arrondissement'] = 'Non spécifié'
-        if 'quartier' not in df.columns:
-            df['quartier'] = 'Non spécifié'
+                # Si la feuille spécifique n'existe pas, charger la première feuille
+                df = pd.read_excel(filepath)
+        else:
+            # Charger comme CSV
+            df = pd.read_csv(filepath)
             
-        # Créer des caractéristiques dérivées
-        if 'date_don' in df.columns and pd.api.types.is_datetime64_any_dtype(df['date_don']):
-            df['mois_don'] = df['date_don'].dt.month
-            df['annee_don'] = df['date_don'].dt.year
-            df['trimestre_don'] = df['date_don'].dt.quarter
+        # Appliquer les transformations minimales nécessaires
+        if 'ID' in df.columns:
+            df = df.rename(columns={'ID': 'id_donneur'})
+        if 'Age' in df.columns:
+            df['age'] = pd.to_numeric(df['Age'], errors='coerce').fillna(30).astype(int)
         
-        # Créer des tranches d'âge si la colonne âge existe
-        if 'age' in df.columns:
-            bins = [18, 25, 35, 45, 55, 65, 100]
-            labels = ['18-24', '25-34', '35-44', '45-54', '55-64', '65+']
-            df['tranche_age'] = pd.cut(df['age'], bins=bins, labels=labels, right=False)
+        # Créer une colonne d'éligibilité par défaut
+        df['eligible'] = 1
+        df['condition_sante'] = 'Aucune'
         
-        # Retourner le dataframe nettoyé et prétraité
         return df
-        
+            
     except Exception as e:
         st.error(f"Erreur lors du chargement des données: {str(e)}")
-        # En cas d'erreur, retourner un DataFrame vide ou générer des données factices
+        # Générer des données factices en cas d'échec
         return generate_dummy_data(500)
 
 def prepare_geo_data(df):
@@ -163,11 +80,48 @@ def prepare_geo_data(df):
     Returns:
         pd.DataFrame: DataFrame avec données géographiques agrégées
     """
-    # Grouper par arrondissement et quartier
-    geo_data = df.groupby(['arrondissement', 'quartier']).agg({
-        'id_donneur': 'count',
-        'eligible': 'mean'
-    }).reset_index()
+    # Vérifier que les colonnes nécessaires existent
+    if 'arrondissement' not in df.columns or 'quartier' not in df.columns:
+        cols = [col for col in df.columns 
+                if 'arrondissement' in col.lower().replace('é', 'e') 
+                or 'quartier' in col.lower().replace('é', 'e')]
+        
+        if len(cols) >= 2:
+            # Renommer temporairement pour l'agrégation
+            temp_df = df.copy()
+            arrond_col = [col for col in cols if 'arrondissement' in col.lower().replace('é', 'e')][0]
+            quartier_col = [col for col in cols if 'quartier' in col.lower().replace('é', 'e')][0]
+            temp_df = temp_df.rename(columns={arrond_col: 'arrondissement', quartier_col: 'quartier'})
+            
+            # Grouper par arrondissement et quartier
+            geo_data = temp_df.groupby(['arrondissement', 'quartier']).agg({
+                'id_donneur': 'count',
+                'eligible': 'mean'
+            }).reset_index()
+        else:
+            # Si les colonnes n'existent vraiment pas, créer des données de démo
+            st.warning("Colonnes géographiques non trouvées. Utilisation de données factices pour la démonstration.")
+            
+            # Créer des données factices pour la démo
+            arrondissements = ["Douala 1", "Douala 2", "Douala 3", "Douala 4", "Douala 5"]
+            quartiers = ["Logbaba", "Bepanda", "Bonanjo", "Deido", "Akwa", "PK 12", "Ndogbong"]
+            
+            data = []
+            for arrond in arrondissements:
+                for _ in range(3):  # 3 quartiers par arrondissement
+                    quartier = np.random.choice(quartiers)
+                    nb_donneurs = np.random.randint(20, 100)
+                    taux_elig = np.random.uniform(0.5, 0.9)
+                    data.append([arrond, quartier, nb_donneurs, taux_elig])
+            
+            geo_data = pd.DataFrame(data, columns=['arrondissement', 'quartier', 'nombre_donneurs', 'taux_eligibilite'])
+            return geo_data
+    else:
+        # Si les colonnes existent, procéder normalement
+        geo_data = df.groupby(['arrondissement', 'quartier']).agg({
+            'id_donneur': 'count',
+            'eligible': 'mean'
+        }).reset_index()
     
     geo_data.columns = ['arrondissement', 'quartier', 'nombre_donneurs', 'taux_eligibilite']
     geo_data['taux_eligibilite'] = (geo_data['taux_eligibilite'] * 100).round(2)
@@ -177,7 +131,7 @@ def prepare_geo_data(df):
 def generate_dummy_data(n_samples=1000):
     """
     Génère des données fictives pour le développement et les tests.
-    Adapté au format du dataset de don de sang.
+    Adapté au format du dataset de don de sang à Douala.
     
     Args:
         n_samples (int, optional): Nombre d'échantillons à générer. Defaults to 1000.
@@ -185,17 +139,17 @@ def generate_dummy_data(n_samples=1000):
     Returns:
         pd.DataFrame: DataFrame avec des données fictives
     """
-    # Listes pour la génération de données aléatoires
+    # Listes pour la génération de données aléatoires spécifiques à Douala
     arrondissements = ["Douala 1", "Douala 2", "Douala 3", "Douala 4", "Douala 5"]
     quartiers = ["Logbaba", "Bepanda", "Bonanjo", "Deido", "Akwa", "PK 12", "Ndogbong", 
                 "Bonaberi", "Makepe", "Bonamoussadi", "New Bell", "Bonapriso"]
-    professions = ["Étudiant(e)", "Enseignant", "Médecin", "Ingénieur", "Commerçant", "Retraité", 
-                  "Fonctionnaire", "Ouvrier", "Cadre", "Informaticien", "Infirmier", "Militaire"]
+    professions = ["Étudiant(e)", "Enseignant", "Médecin", "Infirmier", "Commerçant", "Fonctionnaire", 
+                  "Ouvrier", "Cadre", "Informaticien", "Militaire", "Chauffeur", "Comptable"]
     conditions_sante = ["Aucune", "Porteur HIV/HBS/HCV", "Diabétique", "Hypertendu", "Asthmatique", 
                         "Cardiaque", "Drépanocytaire"]
     sexes = ["Homme", "Femme"]
-    niveaux_etude = ["Universitaire", "Secondaire", "Primaire", "Pas Précisé", "Aucun"]
-    situations_matrimoniales = ["Célibataire", "Marié(e)", "Divorcé(e)", "Veuf(ve)"]
+    niveaux_etude = ["Universitaire", "Secondaire", "Primaire", "Pas Précisé"]
+    situations_matrimoniales = ["Célibataire", "Marié(e)", "Divorcé(e)"]
     
     # Générer les données
     data = {
