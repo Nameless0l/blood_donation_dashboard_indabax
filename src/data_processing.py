@@ -18,7 +18,7 @@ def load_and_process_data(filepath):
     """
     try:
         # Vérifier si un fichier prétraité existe
-        preprocessed_file = "/data/preprocessed_data.csv"
+        preprocessed_file = "data/preprocessed_data.csv"
         
         if os.path.exists(preprocessed_file):
             st.success(f"Utilisation du fichier prétraité: {preprocessed_file}")
