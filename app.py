@@ -1,8 +1,7 @@
 import io 
 import os
-import pickle
-import folium
 import base64
+import folium
 import joblib
 import tempfile
 import numpy as np
