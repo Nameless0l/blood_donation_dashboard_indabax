@@ -1,4 +1,7 @@
 # main.py - Fichier principal de l'API
+from fastapi.openapi.docs import get_swagger_ui_html, get_redoc_html
+from fastapi.staticfiles import StaticFiles
+from fastapi.openapi.utils import get_openapi
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
@@ -8,11 +11,48 @@ import os
 import pandas as pd
 import numpy as np
 from enum import Enum
+from pydantic import BaseModel
 
 # Initialisation de l'API
 app = FastAPI(
     title="API de prédiction d'éligibilité au don de sang",
-    description="Cette API permet de prédire l'éligibilité d'un donneur au don de sang en utilisant un modèle de machine learning",
+    description="""
+    Cette API permet de prédire l'éligibilité d'un donneur au don de sang en utilisant un modèle de machine learning.
+    
+    ## Fonctionnalités
+    
+    * **Prédiction d'éligibilité** - Évalue si un donneur est éligible au don de sang
+    * **Détection des facteurs d'exclusion** - Identifie les raisons d'inéligibilité
+    * **Niveau de confiance** - Fournit un pourcentage de confiance pour chaque prédiction
+    
+    ## Comment utiliser l'API
+    
+    1. Envoyez les données du donneur au endpoint `/predict`
+    2. Recevez la prédiction d'éligibilité et les détails associés
+    """,
+    contact={
+        "name": "Équipe médicale",
+        "email": "contact@example.com",
+    },
+    license_info={
+        "name": "Licence privée",
+    },
+    openapi_tags=[
+        {
+            "name": "Statut",
+            "description": "Vérification du statut de l'API",
+        },
+        {
+            "name": "Prédiction",
+            "description": "Prédiction d'éligibilité au don de sang",
+        },
+        {
+            "name": "Informations",
+            "description": "Informations sur le modèle et ses caractéristiques",
+        },
+    ],
+    docs_url=None,  # On désactive les routes par défaut
+    redoc_url=None,
     version="1.0.0",
 )
 
@@ -26,8 +66,8 @@ app.add_middleware(
 )
 
 # Chemins vers les fichiers de modèle et statistiques
-MODEL_PATH = "model/eligibility_model_gradient_boosting_20250323_104955.pkl"
-MODEL_INFO_PATH = "model/model_info_20250323_104955.json"
+MODEL_PATH = "../model/eligibility_model_gradient_boosting_20250323_104955.pkl"
+MODEL_INFO_PATH = "../model/model_info_20250323_104955.json"
 
 # Classes pour les entrées et sorties
 class Genre(str, Enum):
@@ -90,29 +130,88 @@ class DonneurInput(BaseModel):
     
     class Config:
         schema_extra = {
-            "example": {
-                "age": 35,
-                "genre": "Homme",
-                "niveau_etude": "Universitaire",
-                "situation_matrimoniale": "Marié(e)",
-                "profession": "Enseignant",
-                "nationalite": "Camerounaise",
-                "religion": "Chrétien(ne)",
-                "deja_donne": "Oui",
-                "arrondissement": "Douala 3",
-                "quartier": "Logbaba",
-                "porteur_vih_hbs_hcv": False,
-                "diabetique": False,
-                "hypertendu": False,
-                "asthmatique": False,
-                "drepanocytaire": False,
-                "cardiaque": False,
-                "taux_hemoglobine": 13.5,
-                "transfusion": False,
-                "tatoue": False,
-                "scarifie": False
+            "examples": {
+                "donneur_eligible": {
+                    "summary": "Donneur éligible typique",
+                    "description": "Un donneur sans contre-indications médicales",
+                    "value": {
+                        "age": 35,
+                        "genre": "Homme",
+                        "niveau_etude": "Universitaire",
+                        "situation_matrimoniale": "Marié(e)",
+                        "profession": "Enseignant",
+                        "nationalite": "Camerounaise",
+                        "religion": "Chrétien(ne)",
+                        "deja_donne": "Oui",
+                        "arrondissement": "Douala 3",
+                        "quartier": "Logbaba",
+                        "porteur_vih_hbs_hcv": False,
+                        "diabetique": False,
+                        "hypertendu": False,
+                        "asthmatique": False,
+                        "drepanocytaire": False,
+                        "cardiaque": False,
+                        "taux_hemoglobine": 14.5,
+                        "transfusion": False,
+                        "tatoue": False,
+                        "scarifie": False
+                    }
+                },
+                "donneur_ineligible_1": {
+                    "summary": "Donneur avec hépatite",
+                    "description": "Un donneur avec une contre-indication médicale absolue",
+                    "value": {
+                        "age": 40,
+                        "genre": "Homme",
+                        "niveau_etude": "Universitaire",
+                        "situation_matrimoniale": "Marié(e)",
+                        "profession": "Ingénieur",
+                        "nationalite": "Camerounaise",
+                        "religion": "Chrétien(ne)",
+                        "deja_donne": "Non",
+                        "arrondissement": "Douala 5",
+                        "quartier": "Kotto",
+                        "porteur_vih_hbs_hcv": True,
+                        "diabetique": False,
+                        "hypertendu": False,
+                        "asthmatique": False,
+                        "drepanocytaire": False,
+                        "cardiaque": False,
+                        "taux_hemoglobine": 15.0,
+                        "transfusion": False,
+                        "tatoue": False,
+                        "scarifie": False
+                    }
+                },
+                "donneur_ineligible_2": {
+                    "summary": "Donneur avec hémoglobine basse",
+                    "description": "Un donneur avec un taux d'hémoglobine insuffisant",
+                    "value": {
+                        "age": 25,
+                        "genre": "Femme",
+                        "niveau_etude": "Universitaire",
+                        "situation_matrimoniale": "Célibataire",
+                        "profession": "Étudiante",
+                        "nationalite": "Camerounaise",
+                        "religion": "Chrétien(ne)",
+                        "deja_donne": "Non",
+                        "arrondissement": "Douala 4",
+                        "quartier": "Bonabéri",
+                        "porteur_vih_hbs_hcv": False,
+                        "diabetique": False,
+                        "hypertendu": False,
+                        "asthmatique": False,
+                        "drepanocytaire": False,
+                        "cardiaque": False,
+                        "taux_hemoglobine": 11.5,
+                        "transfusion": False,
+                        "tatoue": False,
+                        "scarifie": False
+                    }
+                }
             }
         }
+        
 
 class PredictionOutput(BaseModel):
     prediction: str = Field(..., description="Prédiction d'éligibilité (Éligible ou Non éligible)")
@@ -417,6 +516,44 @@ async def get_model_info():
 @app.on_event("startup")
 async def startup_event():
     load_model()
+
+@app.get("/docs", include_in_schema=False)
+async def custom_swagger_ui_html():
+    return get_swagger_ui_html(
+        openapi_url=app.openapi_url,
+        title=app.title + " - Documentation API",
+        oauth2_redirect_url=app.swagger_ui_oauth2_redirect_url,
+        swagger_js_url="https://cdn.jsdelivr.net/npm/swagger-ui-dist@4.1.3/swagger-ui-bundle.js",
+        swagger_css_url="https://cdn.jsdelivr.net/npm/swagger-ui-dist@4.1.3/swagger-ui.css",
+    )
+
+@app.get("/redoc", include_in_schema=False)
+async def redoc_html():
+    return get_redoc_html(
+        openapi_url=app.openapi_url,
+        title=app.title + " - Documentation ReDoc",
+        redoc_js_url="https://cdn.jsdelivr.net/npm/redoc@next/bundles/redoc.standalone.js",
+    )
+
+# Fonction custom pour personnaliser OpenAPI (optionnel)
+def custom_openapi():
+    if app.openapi_schema:
+        return app.openapi_schema
+    
+    openapi_schema = get_openapi(
+        title=app.title,
+        version=app.version,
+        description=app.description,
+        routes=app.routes,
+    )
+    
+    # Cette ligne est cruciale pour corriger l'erreur :
+    openapi_schema["openapi"] = "3.0.2"
+    
+    app.openapi_schema = openapi_schema
+    return app.openapi_schema
+
+app.openapi = custom_openapi
 
 # Lancement de l'application
 if __name__ == "__main__":
