@@ -1,0 +1,53 @@
+{
+    "model_name": "gradient_boosting",
+    "accuracy": 0.8903394255874674,
+    "precision": 0.9161676646706587,
+    "recall": 0.95625,
+    "f1_score": 0.9357798165137615,
+    "roc_auc": 0.8816468253968253,
+    "training_date": "20250323_104955",
+    "features": [
+        "age",
+        "experience_don",
+        "Niveau d'etude",
+        "Genre",
+        "Situation Matrimoniale (SM)",
+        "Profession",
+        "Arrondissement de r\u00e9sidence",
+        "Quartier de R\u00e9sidence",
+        "Nationalit\u00e9",
+        "Religion",
+        "A-t-il (elle) d\u00e9j\u00e0 donn\u00e9 le sang",
+        "Taux d\u2019h\u00e9moglobine",
+        "groupe_age",
+        "arrondissement_clean",
+        "quartier_clean"
+    ],
+    "numeric_features": [
+        "age",
+        "experience_don"
+    ],
+    "categorical_features": [
+        "Niveau d'etude",
+        "Genre",
+        "Situation Matrimoniale (SM)",
+        "Profession",
+        "Arrondissement de r\u00e9sidence",
+        "Quartier de R\u00e9sidence",
+        "Nationalit\u00e9",
+        "Religion",
+        "A-t-il (elle) d\u00e9j\u00e0 donn\u00e9 le sang",
+        "Taux d\u2019h\u00e9moglobine",
+        "groupe_age",
+        "arrondissement_clean",
+        "quartier_clean"
+    ],
+    "best_params": {
+        "classifier__subsample": 0.9,
+        "classifier__n_estimators": 100,
+        "classifier__min_samples_split": 2,
+        "classifier__min_samples_leaf": 2,
+        "classifier__max_depth": 5,
+        "classifier__learning_rate": 0.1
+    }
+}

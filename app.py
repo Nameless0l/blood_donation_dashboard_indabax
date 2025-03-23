@@ -2,8 +2,9 @@ import io
 import os
 import pickle
 import folium
-import tempfile
 import base64
+import joblib
+import tempfile
 import numpy as np
 import pandas as pd
 import streamlit as st
@@ -17,6 +18,7 @@ from streamlit_folium import folium_static
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
+from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.metrics import accuracy_score, classification_report
 from visualizations import (create_geographic_visualizations, create_health_condition_visualizations,
                             create_donor_profiling_visualizations, create_campaign_effectiveness_visualizations,
@@ -89,90 +91,229 @@ def load_data(file_path=None, uploaded_file=None):
 
 def train_eligibility_model(df):
     """
-    Entraîne un modèle de prédiction d'éligibilité au don de sang
+    Charge un modèle de prédiction d'éligibilité et prépare les statistiques pour l'imputation
     """
-    # Vérifier si le modèle existe déjà
-    model_path = "model/eligibility_model.pkl"
-    if os.path.exists(model_path):
-        with open(model_path, 'rb') as f:
-            model = pickle.load(f)
-        return model
+    # Calculer les statistiques pour chaque colonne du DataFrame
+    feature_stats = {}
+    for col in df.columns:
+        # Ignorer les colonnes d'éligibilité
+        if col in ['eligibilite_code', 'ÉLIGIBILITÉ AU DON.']:
+            continue
+            
+        # Pour les colonnes numériques
+        if df[col].dtype in ['int64', 'float64']:
+            mean_value = df[col].mean() if not pd.isna(df[col].mean()) else 0
+            feature_stats[col] = {'type': 'numeric', 'fill_value': mean_value}
+        # Pour les colonnes catégorielles
+        else:
+            # Utiliser le mode (valeur la plus fréquente)
+            if not df[col].mode().empty:
+                mode_value = df[col].mode()[0]
+            else:
+                mode_value = "" if df[col].dtype == 'object' else 0
+            feature_stats[col] = {'type': 'categorical', 'fill_value': mode_value}
     
-    # Créer le répertoire model s'il n'existe pas
-    os.makedirs("model", exist_ok=True)
+    # Chemin du modèle
+    model_path = "model/eligibility_model_gradient_boosting_20250323_104955.pkl"
     
-    # Préparer les données pour l'entraînement
-    # Sélectionner les caractéristiques pertinentes
-    features = []
-    
-    # Caractéristiques démographiques
-    if 'age' in df.columns:
-        features.append('age')
-    
-    if 'Genre' in df.columns:
-        # Encoder le genre
-        df['genre_code'] = df['Genre'].map({'Homme': 1, 'Femme': 0})
-        features.append('genre_code')
-    
-    # Expérience de don antérieure
-    if 'experience_don' in df.columns:
-        features.append('experience_don')
-    
-    # Conditions de santé (indicateurs)
-    health_indicators = [col for col in df.columns if '_indicateur' in col]
-    features.extend(health_indicators)
-    
-    # Filtrer les lignes sans valeurs manquantes pour les caractéristiques sélectionnées
-    model_df = df[features + ['eligibilite_code']].dropna()
-    
-    # Vérifier si nous avons suffisamment de données
-    if len(model_df) < 20:
-        return None
-    
-    # Diviser en caractéristiques et cible
-    X = model_df[features]
-    y = model_df['eligibilite_code']
-    
-    # Convertir y en catégories (éligible / non éligible)
-    y_binary = (y == 1).astype(int)  # 1 pour éligible, 0 pour non éligible
-    
-    # Diviser en ensembles d'entraînement et de test
-    X_train, X_test, y_train, y_test = train_test_split(X, y_binary, test_size=0.2, random_state=42)
-    
-    # Entraîner un modèle RandomForest
-    model = RandomForestClassifier(n_estimators=100, random_state=42)
-    model.fit(X_train, y_train)
-    
-    # Évaluer le modèle
-    y_pred = model.predict(X_test)
-    accuracy = accuracy_score(y_test, y_pred)
-    
-    # Sauvegarder le modèle
-    with open(model_path, 'wb') as f:
-        pickle.dump(model, f)
-    
-    return model
+    try:
+        if os.path.exists(model_path):
+            # Charger le modèle
+            model = joblib.load(model_path)
+            print(f"Modèle chargé depuis: {model_path}")
+            
+            # Liste complète des colonnes nécessaires (à partir de l'erreur)
+            required_columns = [
+                # Colonnes déjà identifiées
+                'age', 'genre_code', 'experience_don',
+                'porteur_vih_hbs_hcv', 'diabetique', 'hypertendu', 'asthmatique',
+                'drepanocytaire', 'cardiaque', 'transfusion', 'tatoue', 'scarifie',
+                'poids', 'taille', 'imc',
+                
+                # Colonnes manquantes identifiées dans l'erreur
+                "Taux d\u2019h\u00e9moglobine", 'Nationalité', 'arrondissement_clean', 
+                'Profession', 'A-t-il (elle) déjà donné le sang', 'groupe_age',
+                "Niveau d'etude", 'quartier_clean', 'Quartier de Résidence',
+                'Religion', 'Situation Matrimoniale (SM)', 'Arrondissement de résidence'
+            ]
+            
+            # Vérifier quelles colonnes sont réellement présentes dans le DataFrame
+            available_columns = [col for col in required_columns if col in df.columns]
+            
+            return model, required_columns, feature_stats
+            
+        else:
+            # Modèle non trouvé, retourner None
+            st.error(f"Modèle non trouvé à: {model_path}")
+            return None, [], feature_stats
+            
+    except Exception as e:
+        st.error(f"Erreur lors du chargement du modèle: {e}")
+        return None, [], feature_stats
 
-def predict_eligibility(model, input_features):
+def predict_eligibility(model, input_data, required_columns=None, feature_stats={}):
     """
-    Prédit l'éligibilité au don de sang à partir des caractéristiques d'entrée
+    Prédit l'éligibilité au don de sang en appliquant des règles de sécurité strictes
     """
+    # Vérifier les critères d'exclusion absolus AVANT d'utiliser le modèle
+    if isinstance(input_data, dict):
+        # Critères d'exclusion absolus
+        if input_data.get('porteur_vih_hbs_hcv', 0) == 1:
+            return "Non éligible", 100.0  # Confiance maximale pour raison de sécurité
+        
+    elif isinstance(input_data, pd.DataFrame) and 'porteur_vih_hbs_hcv' in input_data.columns:
+        if input_data['porteur_vih_hbs_hcv'].iloc[0] == 1:
+            return "Non éligible", 100.0
+    
+    # Si aucun critère d'exclusion absolu n'est trouvé, continuer avec le modèle
     if model is None:
-        return "Modèle non disponible"
+        return "Modèle non disponible", 0
     
-    # Faire la prédiction
-    prediction = model.predict([input_features])[0]
-    prediction_proba = model.predict_proba([input_features])[0]
-    
-    if prediction == 1:
-        result = "Éligible"
-        confidence = prediction_proba[1] * 100
-    else:
-        result = "Non éligible"
-        confidence = prediction_proba[0] * 100
-    
-    return result, confidence
-
+    try:
+        # Convertir en DataFrame si nécessaire
+        if isinstance(input_data, dict):
+            # Créer un nouveau dictionnaire avec les clés normalisées
+            normalized_data = {}
+            
+            # Correspondance entre clés courantes et clés attendues
+            key_mapping = {
+                # Mappings standard
+                "age": "age",
+                "experience_don": "experience_don",
+                "Genre": "Genre",
+                "Niveau d'etude": "Niveau d'etude",
+                "Situation Matrimoniale (SM)": "Situation Matrimoniale (SM)",
+                "Profession": "Profession",
+                "arrondissement_clean": "arrondissement_clean",
+                "quartier_clean": "quartier_clean",
+                "groupe_age": "groupe_age",
+                
+                # Mappings avec caractères accentués et apostrophes spécifiques
+                "Arrondissement de résidence": "Arrondissement de résidence",
+                "Quartier de Résidence": "Quartier de Résidence",
+                "Nationalité": "Nationalité",
+                "Religion": "Religion",
+                "A-t-il (elle) déjà donné le sang": "A-t-il (elle) déjà donné le sang",
+                
+                # Cas particulier du taux d'hémoglobine avec différentes apostrophes
+                "Taux d\u2019h\u00e9moglobine": "Taux d\u2019h\u00e9moglobine",
+                "Taux d\u2019h\u00e9moglobine": "Taux d\u2019h\u00e9moglobine",
+                "Taux d\u2019h\u00e9moglobine": "Taux d\u2019h\u00e9moglobine",
+                "Taux d\u2019h\u00e9moglobine": "Taux d\u2019h\u00e9moglobine",
+                "Taux d\u2019h\u00e9moglobine": "Taux d\u2019h\u00e9moglobine",
+                "Taux d\u2019h\u00e9moglobine": "Taux d\u2019h\u00e9moglobine"
+            }
+            
+            # Transférer les valeurs en utilisant les mappings
+            for input_key, input_value in input_data.items():
+                # Chercher une correspondance dans le mapping
+                matched = False
+                for pattern, target_key in key_mapping.items():
+                    # Comparaison insensible aux différences d'apostrophes et d'accents
+                    if pattern.lower().replace("'", "").replace("'", "").replace("é", "e") == \
+                       input_key.lower().replace("'", "").replace("'", "").replace("é", "e"):
+                        normalized_data[target_key] = input_value
+                        matched = True
+                        break
+                
+                # Si aucune correspondance trouvée, utiliser la clé originale
+                if not matched:
+                    normalized_data[input_key] = input_value
+            
+            # Créer DataFrame avec les données normalisées
+            input_df = pd.DataFrame([normalized_data])
+        else:
+            input_df = input_data
+        
+        # Si nous avons la liste des colonnes requises
+        if required_columns:
+            # Créer un DataFrame pour la prédiction
+            prediction_df = pd.DataFrame(index=input_df.index)
+            
+            # Pour chaque colonne requise
+            for col in required_columns:
+                if col in input_df.columns:
+                    # Utiliser la valeur fournie
+                    prediction_df[col] = input_df[col]
+                else:
+                    # Cas spéciaux avec mappages directs
+                    if col == "experience_don" and "A-t-il (elle) déjà donné le sang" in input_df.columns:
+                        prediction_df[col] = input_df["A-t-il (elle) déjà donné le sang"].map({'Oui': 1, 'Non': 0})
+                    
+                    # Recherche par nom similaire (sans apostrophes/accents)
+                    elif col.lower().replace("'", "").replace("é", "e") in [
+                        c.lower().replace("'", "").replace("é", "e") for c in input_df.columns
+                    ]:
+                        # Trouver la colonne correspondante
+                        for input_col in input_df.columns:
+                            if input_col.lower().replace("'", "").replace("é", "e") == \
+                               col.lower().replace("'", "").replace("é", "e"):
+                                prediction_df[col] = input_df[input_col]
+                                break
+                    
+                    # Imputer avec les statistiques
+                    elif col in feature_stats:
+                        prediction_df[col] = feature_stats[col]['fill_value']
+                    
+                    # Valeurs par défaut selon le type
+                    else:
+                        is_text_col = col in [
+                            "Niveau d'etude", "Genre", "Situation Matrimoniale (SM)",
+                            "Profession", "Arrondissement de résidence", "Quartier de Résidence",
+                            "Nationalité", "Religion", "A-t-il (elle) déjà donné le sang",
+                            "groupe_age", "arrondissement_clean", "quartier_clean"
+                        ]
+                        prediction_df[col] = "" if is_text_col else 0
+            
+            # Faire la prédiction
+            prediction = model.predict(prediction_df)[0]
+            print(prediction)
+            probabilities = model.predict_proba(prediction_df)[0]
+        else:
+            # Utiliser le DataFrame tel quel
+            prediction = model.predict(input_df)[0]
+            probabilities = model.predict_proba(input_df)[0]
+        
+        # Interpréter les résultats
+        if prediction == 1:
+            result = "Éligible"
+            confidence = probabilities[1] * 100
+        else:
+            result = "Non éligible"
+            confidence = probabilities[0] * 100
+        
+        # VÉRIFICATION FINALE DES RÈGLES DE SÉCURITÉ
+        # Même si le modèle prédit "Éligible", certaines conditions doivent toujours rendre non éligible
+        if result == "Éligible":
+            # Vérifier à nouveau les critères d'exclusion absolus
+            if isinstance(input_data, dict):
+                # Porteur de VIH/hépatite
+                if input_data.get('porteur_vih_hbs_hcv', 0) == 1:
+                    return "Non éligible", 100.0
+                
+                # Autres conditions d'exclusion absolue
+                if (input_data.get('drepanocytaire', 0) == 1 or 
+                    input_data.get('cardiaque', 0) == 1):
+                    return "Non éligible", 100.0
+            
+            elif isinstance(input_data, pd.DataFrame):
+                # Porteur de VIH/hépatite
+                if 'porteur_vih_hbs_hcv' in input_data.columns and input_data['porteur_vih_hbs_hcv'].iloc[0] == 1:
+                    return "Non éligible", 100.0
+                
+                # Autres conditions d'exclusion absolue
+                if (('drepanocytaire' in input_data.columns and input_data['drepanocytaire'].iloc[0] == 1) or 
+                    ('cardiaque' in input_data.columns and input_data['cardiaque'].iloc[0] == 1)):
+                    return "Non éligible", 100.0
+        
+        return result, confidence
+        
+    except Exception as e:
+        st.error(f"Erreur lors de la prédiction: {e}")
+        
+        # Affichage du débogage...
+        
+        return "Erreur de prédiction", 0
 def get_feature_importance(model, feature_names):
     """
     Retourne l'importance des caractéristiques du modèle
@@ -353,7 +494,7 @@ def main():
     try:
         if data_dict:
             # Créer un modèle de prédiction
-            model = train_eligibility_model(data_dict['candidats'])
+            model, expected_features, feature_stats = train_eligibility_model(data_dict['candidats'])
             
             # Afficher la section sélectionnée
             if section == "📍 Répartition Géographique":
@@ -370,12 +511,15 @@ def main():
                 show_sentiment_analysis(data_dict)
             elif section == "🤖 Prédiction d'Éligibilité":
                 show_eligibility_prediction(data_dict, model)
+        elif section == "🤖 Prédiction d'Éligibilité":
+            show_eligibility_prediction(data_dict, model, expected_features, feature_stats)
         else:
             st.error("Aucune donnée n'a pu être chargée. Veuillez uploader un fichier valide ou vérifier le fichier par défaut.")
     
     except Exception as e:
         st.error(f"Une erreur s'est produite lors du chargement ou du traitement des données : {e}")
         st.info("Veuillez vérifier que le fichier est accessible et correctement formaté.")
+
 def show_geographic_distribution(data_dict):
     """Affiche la section de répartition géographique des donneurs"""
     st.header("📍 Cartographie de la Répartition des Donneurs")
@@ -835,179 +979,216 @@ def show_sentiment_analysis(data_dict):
     - Former le personnel à mieux gérer les préoccupations des donneurs
     """)
 
-def show_eligibility_prediction(data_dict, model):
-    """Affiche la section de prédiction d'éligibilité"""
-    st.header("🤖 Modèle de Prédiction d'Éligibilité")
+def show_eligibility_prediction(data_dict, model, required_columns=None, feature_stats={}):
+    """
+    Affiche l'interface de prédiction avec règles de sécurité strictes
+    """
+    st.header("🤖 Prédiction d'Éligibilité")
     
     st.markdown("""
     Cette section vous permet de prédire l'éligibilité d'un potentiel donneur
-    en fonction de ses caractéristiques démographiques et de santé. Cet outil
-    peut être utilisé pour le pré-screening avant les campagnes.
+    en fonction de ses caractéristiques démographiques et de santé.
     """)
     
     if model is None:
-        st.warning("""
-        Le modèle de prédiction n'a pas pu être créé en raison de données insuffisantes.
-        Pour implémenter cette fonctionnalité, il faudrait:
-        
-        1. Collecter plus de données sur les donneurs et leur éligibilité
-        2. Entraîner un modèle d'apprentissage automatique avec ces données
-        3. Déployer le modèle via une API pour l'utiliser en temps réel
-        """)
+        st.warning("Le modèle de prédiction n'est pas disponible.")
         return
     
-    # Interface de prédiction
-    st.subheader("Prédiction d'Éligibilité")
+    # Afficher les caractéristiques attendues
+    with st.expander("Caractéristiques attendues par le modèle"):
+        if required_columns:
+            st.write(f"Le modèle utilise {len(required_columns)} caractéristiques:")
+            st.write(", ".join(required_columns))
+        else:
+            st.write("Impossible de déterminer les caractéristiques attendues.")
     
-    col1, col2 = st.columns(2)
+    # Dictionnaire pour stocker les valeurs
+    input_values = {}
     
-    with col1:
-        # Caractéristiques démographiques
-        st.markdown("**Caractéristiques démographiques**")
+    # Organisation par onglets
+    tabs = st.tabs(["Informations générales", "Santé", "Localisation"])
+    
+    # Onglet 1: Informations générales
+    with tabs[0]:
+        col1, col2 = st.columns(2)
         
-        age = st.slider("Âge", 18, 70, 35)
-        genre = st.radio("Genre", ["Homme", "Femme"])
-        already_donated = st.radio("A déjà donné du sang ?", ["Oui", "Non"])
+        with col1:
+            # Âge
+            age = st.slider("Âge", 18, 70, 35)
+            input_values["age"] = age
+            
+            # Calculer le groupe d'âge
+            if age < 18:
+                age_group = "<18"
+            elif age <= 25:
+                age_group = "18-25"
+            elif age <= 35:
+                age_group = "26-35"
+            elif age <= 45:
+                age_group = "36-45"
+            elif age <= 55:
+                age_group = "46-55"
+            elif age <= 65:
+                age_group = "56-65"
+            else:
+                age_group = ">65"
+            input_values["groupe_age"] = age_group
+            
+            # Genre
+            genre = st.radio("Genre", ["Homme", "Femme"])
+            input_values["Genre"] = genre
+            
+            # Expérience de don
+            deja_donne = st.radio("A déjà donné le sang ?", ["Oui", "Non"])
+            input_values["A-t-il (elle) déjà donné le sang"] = deja_donne
+            input_values["experience_don"] = 1 if deja_donne == "Oui" else 0
         
-        # Convertir en format numérique
-        genre_code = 1 if genre == "Homme" else 0
-        experience_don = 1 if already_donated == "Oui" else 0
+        with col2:
+            # Niveau d'études
+            niveau_etude = st.selectbox("Niveau d'études", 
+                                       ["Non précisé", "Primaire", "Secondaire", "Universitaire"])
+            input_values["Niveau d'etude"] = niveau_etude
+            
+            # Situation matrimoniale
+            situation_matrimoniale = st.selectbox("Situation matrimoniale", 
+                                                 ["Non précisé", "Célibataire", "Marié(e)", 
+                                                  "Divorcé(e)", "Veuf/Veuve"])
+            input_values["Situation Matrimoniale (SM)"] = situation_matrimoniale
+            
+            # Profession
+            profession = st.text_input("Profession", "Non précisé")
+            input_values["Profession"] = profession
+            
+            # Religion
+            religion = st.selectbox("Religion", 
+                                   ["Non précisé", "Chrétien(ne)", "Musulman(e)", "Autre"])
+            input_values["Religion"] = religion
+            
+            # Nationalité
+            nationalite = st.selectbox("Nationalité", ["Camerounaise", "Autre"])
+            input_values["Nationalité"] = nationalite
     
-    with col2:
-        # Conditions de santé
-        st.markdown("**Conditions de santé**")
+    # Onglet 2: Santé
+    with tabs[1]:
+        col1, col2 = st.columns(2)
         
-        hiv_hbs_hcv = st.checkbox("Porteur de VIH, hépatite B ou C")
-        diabete = st.checkbox("Diabétique")
-        hypertension = st.checkbox("Hypertendu")
-        asthme = st.checkbox("Asthmatique")
-        drepano = st.checkbox("Drépanocytaire")
-        cardiaque = st.checkbox("Problèmes cardiaques")
+        with col1:
+            st.subheader("Conditions de santé")
+            
+            # VIH, hépatite - CRITÈRE D'EXCLUSION ABSOLU
+            vih_hbs_hcv = st.checkbox("Porteur de VIH, hépatite B ou C")
+            input_values["porteur_vih_hbs_hcv"] = 1 if vih_hbs_hcv else 0
+            
+            # Afficher un avertissement si VIH/hépatite sélectionné
+            if vih_hbs_hcv:
+                st.warning("⚠️ Critère d'exclusion absolu : Porteur de VIH ou d'hépatite B/C")
+            
+            # Autres conditions médicales
+            diabete = st.checkbox("Diabétique")
+            input_values["diabetique"] = 1 if diabete else 0
+            
+            hypertension = st.checkbox("Hypertendu")
+            input_values["hypertendu"] = 1 if hypertension else 0
+            
+            asthme = st.checkbox("Asthmatique")
+            input_values["asthmatique"] = 1 if asthme else 0
+            
+            # Critères d'exclusion absolus
+            drepanocytaire = st.checkbox("Drépanocytaire")
+            input_values["drepanocytaire"] = 1 if drepanocytaire else 0
+            if drepanocytaire:
+                st.warning("⚠️ Critère d'exclusion absolu : Drépanocytaire")
+            
+            cardiaque = st.checkbox("Problèmes cardiaques")
+            input_values["cardiaque"] = 1 if cardiaque else 0
+            if cardiaque:
+                st.warning("⚠️ Critère d'exclusion absolu : Problèmes cardiaques")
+        
+        with col2:
+            # Taux d'hémoglobine
+            taux_hemoglobine = st.number_input("Taux d'hémoglobine (g/dL)", 
+                                              min_value=7.0, max_value=20.0, value=13.5, step=0.1)
+            
+            # Utiliser exactement le même caractère apostrophe que celui attendu par le modèle
+            input_values["Taux d\u2019h\u00e9moglobine"] = taux_hemoglobine
+            
+            # Avertissement pour taux d'hémoglobine bas
+            if (genre == "Homme" and taux_hemoglobine < 13.0) or (genre == "Femme" and taux_hemoglobine < 12.0):
+                st.warning(f"⚠️ Taux d'hémoglobine insuffisant pour un{'e' if genre == 'Femme' else ''} {genre.lower()}")
+            
+            # Ajouter d'autres caractéristiques médicales
+            transfusion = st.checkbox("Antécédent de transfusion")
+            input_values["transfusion"] = 1 if transfusion else 0
+            
+            tatouage = st.checkbox("Tatoué")
+            input_values["tatoue"] = 1 if tatouage else 0
+            
+            scarification = st.checkbox("Scarifié")
+            input_values["scarifie"] = 1 if scarification else 0
     
-    # Préparer les caractéristiques d'entrée pour le modèle
-    input_features = []
+    # Onglet 3: Localisation
+    with tabs[2]:
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            # Arrondissement
+            arrondissement = st.selectbox("Arrondissement", 
+                                         ["Douala 1", "Douala 2", "Douala 3", "Douala 4", "Douala 5", 
+                                          "Douala (Non précisé)", "Autre"])
+            
+            input_values["Arrondissement de résidence"] = arrondissement
+            input_values["arrondissement_clean"] = arrondissement
+        
+        with col2:
+            # Quartier
+            quartier = st.text_input("Quartier de résidence", "Non précisé")
+            
+            input_values["Quartier de Résidence"] = quartier
+            input_values["quartier_clean"] = quartier
     
-    # L'ordre des caractéristiques doit correspondre à celui utilisé lors de l'entraînement
-    if 'age' in data_dict['candidats'].columns:
-        input_features.append(age)
+    # Bouton de prédiction avec avertissement pour critères d'exclusion
+    if vih_hbs_hcv or drepanocytaire or cardiaque:
+        st.warning("⚠️ Des critères d'exclusion absolus ont été détectés. Le donneur sera considéré comme non éligible.")
     
-    if 'Genre' in data_dict['candidats'].columns:
-        input_features.append(genre_code)
-    
-    if 'experience_don' in data_dict['candidats'].columns:
-        input_features.append(experience_don)
-    
-    # Conditions de santé
-    health_conditions = {
-        "Porteur(HIV,hbs,hcv)_indicateur": 1 if hiv_hbs_hcv else 0,
-        "Diabétique_indicateur": 1 if diabete else 0,
-        "Hypertendus_indicateur": 1 if hypertension else 0,
-        "Asthmatiques_indicateur": 1 if asthme else 0,
-        "Drepanocytaire_indicateur": 1 if drepano else 0,
-        "Cardiaque_indicateur": 1 if cardiaque else 0
-    }
-    
-    # Ajouter les conditions de santé présentes dans les données d'entraînement
-    for condition in ["Porteur(HIV,hbs,hcv)_indicateur", "Diabétique_indicateur", 
-                      "Hypertendus_indicateur", "Asthmatiques_indicateur",
-                      "Drepanocytaire_indicateur", "Cardiaque_indicateur"]:
-        if condition in data_dict['candidats'].columns:
-            input_features.append(health_conditions[condition])
-    
-    # Bouton de prédiction
     if st.button("Prédire l'éligibilité"):
-        # Faire la prédiction
-        result, confidence = predict_eligibility(model, input_features)
+        # Faire la prédiction avec les règles de sécurité
+        result, confidence = predict_eligibility(model, input_values, required_columns, feature_stats)
         
         # Afficher le résultat
         if result == "Éligible":
             st.success(f"Prédiction : {result} (Confiance : {confidence:.1f}%)")
-        else:
+        elif result == "Non éligible":
             st.error(f"Prédiction : {result} (Confiance : {confidence:.1f}%)")
+        else:
+            st.warning(f"Prédiction : {result}")
         
         # Afficher une explication
-        st.subheader("Explication de la prédiction")
+        st.subheader("Facteurs importants")
         
-        # Obtenir l'importance des caractéristiques
-        feature_names = []
-        if 'age' in data_dict['candidats'].columns:
-            feature_names.append("Âge")
-        
-        if 'Genre' in data_dict['candidats'].columns:
-            feature_names.append("Genre")
-        
-        if 'experience_don' in data_dict['candidats'].columns:
-            feature_names.append("Expérience de don")
-        
-        for condition in ["Porteur(HIV,hbs,hcv)_indicateur", "Diabétique_indicateur", 
-                          "Hypertendus_indicateur", "Asthmatiques_indicateur",
-                          "Drepanocytaire_indicateur", "Cardiaque_indicateur"]:
-            if condition in data_dict['candidats'].columns:
-                feature_names.append(condition.replace("_indicateur", ""))
-        
-        feature_importance = get_feature_importance(model, feature_names)
-        
-        if feature_importance is not None:
-            # Créer un graphique d'importance des caractéristiques
-            fig = px.bar(
-                feature_importance,
-                x='Importance',
-                y='Feature',
-                orientation='h',
-                title="Importance des caractéristiques dans la prédiction",
-                color='Importance',
-                color_continuous_scale=px.colors.sequential.Blues
-            )
+        # Identifier les facteurs déterminants pour la non-éligibilité
+        if result == "Non éligible":
+            factors = []
+            if vih_hbs_hcv:
+                factors.append("Porteur de VIH, hépatite B ou C")
+            if diabete:
+                factors.append("Diabète")
+            if cardiaque:
+                factors.append("Problèmes cardiaques")
+            if drepanocytaire:
+                factors.append("Drépanocytaire")
+            if (genre == "Homme" and taux_hemoglobine < 13.0) or (genre == "Femme" and taux_hemoglobine < 12.0):
+                factors.append("Taux d'hémoglobine bas")
             
-            st.plotly_chart(fig, use_container_width=True)
+            if factors:
+                st.warning(f"Facteur(s) déterminant(s): {', '.join(factors)}")
             
-            # Fournir une explication textuelle
-            top_factors = feature_importance.head(3)['Feature'].tolist()
-            
-            st.markdown(f"""
-            Les facteurs les plus influents dans cette prédiction sont: **{", ".join(top_factors)}**.
-            
-            {"Pour augmenter vos chances d'éligibilité, consultez un professionnel de santé pour discuter des facteurs de risque identifiés." if result == "Non éligible" else "Votre profil correspond à celui d'un donneur éligible typique."}
-            """)
-    
-    # API Documentation
-    st.subheader("Documentation de l'API")
-    
-    st.markdown("""
-    Ce modèle de prédiction peut être intégré à votre site web ou application via une API REST.
-    
-    **Endpoint:** `/api/predict_eligibility`
-    
-    **Méthode:** POST
-    
-    **Format de requête:**
-    ```json
-    {
-        "age": 35,
-        "genre": "Homme",
-        "experience_don": 1,
-        "conditions_sante": {
-            "vih_hbs_hcv": 0,
-            "diabete": 0,
-            "hypertension": 0,
-            "asthme": 0,
-            "drepanocytaire": 0,
-            "cardiaque": 0
-        }
-    }
-    ```
-    
-    **Format de réponse:**
-    ```json
-    {
-        "prediction": "Éligible",
-        "confidence": 92.5,
-        "facteurs_importants": ["Âge", "Expérience de don", "Genre"]
-    }
-    ```
-    
-    Pour implémenter cette API, vous pouvez utiliser Flask ou FastAPI en Python.
-    """)
-
+        # Explication générale
+        st.markdown("""
+        Les facteurs les plus influents pour l'éligibilité au don de sang sont:
+        1. **Conditions médicales** (VIH, hépatite, diabète, problèmes cardiaques)
+        2. **Taux d'hémoglobine** (minimum 12 g/dL pour les femmes, 13 g/dL pour les hommes)
+        3. **Âge** (entre 18 et 65 ans généralement)
+        4. **Expérience de don antérieure**
+        """)
 if __name__ == "__main__":
     main()
