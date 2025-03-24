@@ -2,9 +2,9 @@
 
 # Tableau de Bord de la Campagne de Don de Sang
 # Le projet a été déployé à l'aide de streamlit
-[cliquer ici pour visiter](https://indabax.streamlit.app/)
-[l'api est disponible ici : ](https://indabax-api-model.onrender.com/docs)
-[reamdme pour le code d'api]()
+[cliquer ici pour visiter](https://indabax.streamlit.app/) ||
+[l'api est disponible ici : ](https://indabax-api-model.onrender.com/docs) ||
+[reamdme pour le code d'api](https://github.com/Nameless0l/blood_donation_dashboard_indabax/tree/main/api)
 ## Introduction
 
 Ce tableau de bord interactif a été développé pour aider les organisateurs de campagnes de don de sang à visualiser, analyser et prédire les données relatives aux donneurs. Il permet d'optimiser les futures campagnes en fournissant des insights précieux sur la répartition géographique des donneurs, l'impact des conditions de santé sur l'éligibilité, et les caractéristiques des donneurs idéaux.

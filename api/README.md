@@ -3,6 +3,72 @@
 ## Vue d'ensemble
 
 Cette API permet de prédire l'éligibilité d'un donneur potentiel au don de sang en fonction de ses caractéristiques démographiques et médicales. L'API utilise un modèle d'apprentissage automatique entraîné sur des données historiques, complété par des règles strictes de sécurité transfusionnelle.
+## Installation et déploiement
+
+### Prérequis
+- Python 3.11 ou version supérieure
+- pip (gestionnaire de paquets Python)
+- Git (optionnel, pour cloner le dépôt)
+
+### Installation
+
+1. **Cloner le dépôt** (ou télécharger le code source)
+```bash
+git clone https://github.com/Nameless0l/blood_donation_dashboard_indabax
+
+cd blood_donation_dashboard_indabax
+cd api
+```
+
+2. **Créer un environnement virtuel**
+```bash
+# Sur Windows
+python -m venv venv
+venv\Scripts\activate
+
+# Sur macOS/Linux
+python3 -m venv venv
+source venv/bin/activate
+```
+
+3. **Installer les dépendances**
+```bash
+pip install -r requirements.txt
+```
+
+### Configuration
+
+1. **Vérifier les fichiers du modèle**
+   
+   Assurez-vous que les fichiers du modèle sont présents dans le dossier `model/`:
+   - `model/eligibility_model_gradient_boosting_20250323_104955.pkl`
+   - `model/model_info_20250323_104955.json`
+
+2. **Configuration des paramètres** (optionnel)
+   
+   Vous pouvez ajuster les paramètres de l'application dans le fichier `app/core/config.py`.
+
+### Démarrage du serveur
+
+1. **Lancer l'API en mode développement**
+```bash
+python run.py
+```
+
+2. **Accéder à l'API**
+   - L'API sera accessible à l'adresse: `http://localhost:8000`
+   - La documentation Swagger: `http://localhost:8000/docs`
+   - La documentation ReDoc: `http://localhost:8000/redoc`
+
+### Déploiement en production
+
+Pour un déploiement en production, nous recommandons d'utiliser Gunicorn comme serveur WSGI:
+
+1. **Installer Gunicorn** (si ce n'est pas déjà fait)
+```bash
+pip install gunicorn
+```
+
 
 ## Base URL
 
@@ -17,42 +83,14 @@ Pour un déploiement production, remplacez par l'URL de votre serveur.
 ### Prédiction d'éligibilité
 
 ```
-POST /api/predict_eligibility
+POST /predict_eligibility
 ```
 
 Prédit si un donneur potentiel est éligible au don de sang.
 
 #### Paramètres de la requête
 
-Le corps de la requête doit être un objet JSON contenant les informations du donneur potentiel :
-
-```json
-{
-  "donnees_demographiques": {
-    "age": 35,
-    "genre": "Homme",
-    "niveau_etude": "Universitaire",
-    "situation_matrimoniale": "Marié(e)",
-    "profession": "Ingénieur",
-    "nationalite": "Camerounaise",
-    "religion": "Chrétien(ne)",
-    "experience_don": 1
-  },
-  "donnees_medicales": {
-    "porteur_vih_hbs_hcv": 0,
-    "diabetique": 0,
-    "hypertendu": 0,
-    "asthmatique": 0,
-    "drepanocytaire": 0,
-    "cardiaque": 0,
-    "taux_hemoglobine": 13.5
-  },
-  "donnees_geographiques": {
-    "arrondissement": "Douala 3",
-    "quartier": "Logbaba"
-  }
-}
-```
+Le corps de la requête doit être un objet JSON contenant les informations du donneur potentiel : [cliquer ici](http://localhost:8000/docs#/Informations/get_model_info_model_info_get)
 
 ##### Champs obligatoires
 
@@ -103,7 +141,7 @@ ou
 ### Statut du service
 
 ```
-GET /api/status
+GET /status
 ```
 
 Vérifie si l'API est opérationnelle.
@@ -125,7 +163,7 @@ Vérifie si l'API est opérationnelle.
 **Requête :**
 
 ```bash
-curl -X POST "http://localhost:8000/api/predict_eligibility" \
+curl -X POST "http://localhost:8000/predict_eligibility" \
      -H "Content-Type: application/json" \
      -d '{
            "donnees_demographiques": {
@@ -159,7 +197,7 @@ curl -X POST "http://localhost:8000/api/predict_eligibility" \
 **Requête :**
 
 ```bash
-curl -X POST "http://localhost:8000/api/predict_eligibility" \
+curl -X POST "http://localhost:8000/predict_eligibility" \
      -H "Content-Type: application/json" \
      -d '{
            "donnees_demographiques": {
