@@ -113,7 +113,7 @@ def train_eligibility_model(df):
             feature_stats[col] = {'type': 'categorical', 'fill_value': mode_value}
     
     # Chemin du modèle
-    model_path = "model/eligibility_model_gradient_boosting_20250323_104955.pkl"
+    model_path = "api/model/eligibility_model_gradient_boosting_20250323_104955.pkl"
     
     try:
         if os.path.exists(model_path):

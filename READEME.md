@@ -217,7 +217,7 @@ print(f"Prédiction: {result['prediction']}, Confiance: {result['confidence']}%"
 ### Problèmes connus
 
 1. **Erreur de chargement du modèle**
-   - Vérifiez que le fichier du modèle existe dans le dossier `model/`
+   - Vérifiez que le fichier du modèle existe dans le dossier `api/model/`
    - Vérifiez les permissions sur ce fichier
 
 2. **Erreur lors de la prédiction d'éligibilité**

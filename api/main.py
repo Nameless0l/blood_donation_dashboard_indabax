@@ -65,8 +65,8 @@ app.add_middleware(
 )
 
 # Chemins vers les fichiers de modèle et statistiques
-MODEL_PATH = "./model/eligibility_model_gradient_boosting_20250323_104955.pkl"
-MODEL_INFO_PATH = "./model/model_info_20250323_104955.json"
+MODEL_PATH = ".api/model/eligibility_model_gradient_boosting_20250323_104955.pkl"
+MODEL_INFO_PATH = ".api/model/model_info_20250323_104955.json"
 
 # Classes pour les entrées et sorties
 class Genre(str, Enum):
