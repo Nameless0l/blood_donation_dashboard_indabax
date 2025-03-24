@@ -79,8 +79,10 @@ pip install -r requirements.txt
 ```
 tableau-bord-don-sang/
 ├── app.py                   # Application Streamlit principale
-├── preprocessing.py         # Scripts de prétraitement des données
-├── visualizations.py        # Fonctions de visualisation
+├──          # Scripts de prétraitement des données
+├── model/                   # fonctions
+│   ├── visualizations.py        # Fonctions de visualisation
+│   └── preprocessing.py         # Scripts de prétraitement des données
 ├── model/                   # Modèles entraînés
 │   └── eligibility_model_gradient_boosting_20250323_104955.pkl
 ├── data/processed_data/          # Données prétraitées
@@ -88,6 +90,7 @@ tableau-bord-don-sang/
 ├── data/                    # Données brutes
 │   └── dataset.xlsx
 ├── images/                  # Images pour la documentation
+├── api/                  # api()
 ├── notebooks/               # Notebooks Jupyter pour l'exploration et le modèle
 │   └── eligibility_model_training.ipynb
 ├── requirements.txt         # Dépendances du projet

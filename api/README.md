@@ -223,20 +223,12 @@ L'API applique des règles strictes de sécurité transfusionnelle, indépendamm
 3. Problèmes cardiaques graves
 4. Taux d'hémoglobine inférieur à 13 g/dL pour les hommes ou 12 g/dL pour les femmes
 
-## Authentification
-
-L'API nécessite une authentification par clé API dans les en-têtes HTTP :
-
-```
-Authorization: Bearer YOUR_API_KEY
-```
-
-Contactez l'administrateur du système pour obtenir une clé API valide.
 
 ## Limitations
 
 - Maximum de 100 requêtes par minute par clé API
 - Taille maximale du corps de la requête : 10 KB
+- Attente pour que le serveur se reveil après une moment d'inactivité(Solution gratuite)
 
 ## Intégration
 
@@ -322,7 +314,7 @@ async function checkEligibility() {
 
 Pour toute question ou problème concernant l'API, veuillez contacter :
 
-- Email : aron.mbassi@enspy-uy1.cm
+- Email : aron.mbassi@enspy-uy1.cm, helciaskom@gmail.com
 - Téléphone : +237 656 820 591
 
 ## Changements et mises à jour
