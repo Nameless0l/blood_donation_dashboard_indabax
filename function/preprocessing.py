@@ -342,7 +342,7 @@ def clean_arrondissement(arrond):
     
     return arrond
 
-def save_processed_data(data_dict, output_folder="processed_data"):
+def save_processed_data(data_dict, output_folder="data/processed_data"):
     """
     Sauvegarde les données prétraitées dans des fichiers CSV
     

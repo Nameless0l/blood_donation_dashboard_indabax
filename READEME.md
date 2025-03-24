@@ -79,10 +79,10 @@ tableau-bord-don-sang/
 ├── visualizations.py        # Fonctions de visualisation
 ├── model/                   # Modèles entraînés
 │   └── eligibility_model_gradient_boosting_20250323_104955.pkl
-├── processed_data/          # Données prétraitées
+├── data/processed_data/          # Données prétraitées
 │   └── *.csv
 ├── data/                    # Données brutes
-│   └── Updated Challenge dataset.xlsx
+│   └── dataset.xlsx
 ├── images/                  # Images pour la documentation
 ├── notebooks/               # Notebooks Jupyter pour l'exploration et le modèle
 │   └── eligibility_model_training.ipynb

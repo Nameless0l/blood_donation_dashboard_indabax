@@ -179,9 +179,13 @@ def create_health_condition_visualizations(df):
             
             fig_corr = px.imshow(
                 condition_correlation,
-                title="Corrélation entre les différentes conditions de santé",
-                color_continuous_scale=px.colors.diverging.RdBu,
-                zmin=-1, zmax=1
+                text_auto='.2f',
+                color_continuous_scale='RdBu_r',
+                title="Corrélation entre les conditions médicales"
+            )
+            fig_corr.update_layout(
+                xaxis_title="Condition médicale",
+                yaxis_title="Condition médicale",
             )
             
             figures['health_condition_correlation'] = fig_corr
@@ -809,13 +813,14 @@ def save_visualizations(figures, output_folder="visualizations"):
         plot(fig, filename=output_path, auto_open=False)
         print(f"Visualisation sauvegardée: {output_path}")
 
+
 # Exemple d'utilisation
 if __name__ == "__main__":
     # Importer les données prétraitées
     processed_data = {}
     
     for name in ['candidats', 'donneurs', 'candidats_age', 'combined']:
-        file_path = f"./processed_data/{name}_processed.csv"
+        file_path = f"./data/processed_data/{name}_processed.csv"
         try:
             processed_data[name] = pd.read_csv(file_path)
             print(f"Données chargées: {file_path}")
