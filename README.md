@@ -55,8 +55,8 @@ Le tableau de bord offre les fonctionnalités suivantes :
 
 1. Clonez ce dépôt :
 ```bash
-git clone https://github.com/username/tableau-bord-don-sang.git
-cd tableau-bord-don-sang
+git clone https://github.com/Nameless0l/blood_donation_dashboard_indabax.git 
+cd blood_donation_dashboard_indabax
 ```
 
 2. Créez un environnement virtuel (recommandé) :
@@ -188,23 +188,39 @@ Ces règles incluent :
 
 ### API de Prédiction
 
-Le modèle peut être intégré à d'autres applications via une API REST. Exemple d'utilisation :
+Le modèle peut être intégré à d'autres applications via une API REST. 
 
+documentation
+```bash
+https://indabax-api-model.onrender.com/docs
+```
+Exemple d'utilisation :
 ```python
 import requests
 import json
 
-url = "http://your-domain.com/api/predict_eligibility"
+url = "https://indabax-api-model.onrender.com/predict_eligibility"
 data = {
-    "age": 35,
-    "genre": "Homme",
-    "experience_don": 1,
-    "Taux d'hémoglobine": 14.5,
-    "conditions_sante": {
-        "vih_hbs_hcv": 0,
-        "diabete": 0,
-        "hypertension": 0
-    }
+  "age": 70,
+  "genre": "Homme",
+  "niveau_etude": "Non précisé",
+  "situation_matrimoniale": "Non précisé",
+  "profession": "Non précisé",
+  "nationalite": "Camerounaise",
+  "religion": "Non précisé",
+  "deja_donne": "Oui",
+  "arrondissement": "Douala (Non précisé)",
+  "quartier": "Non précisé",
+  "porteur_vih_hbs_hcv": false,
+  "diabetique": false,
+  "hypertendu": false,
+  "asthmatique": false,
+  "drepanocytaire": false,
+  "cardiaque": false,
+  "taux_hemoglobine": 20,
+  "transfusion": false,
+  "tatoue": false,
+  "scarifie": false
 }
 
 response = requests.post(url, json=data)

@@ -2,7 +2,8 @@
 ## IndabaX 2025 - Tableau de Bord pour la Campagne de Don de Sang
 
 **Date :** 23 mars 2025  
-**Auteur :** [Votre nom]
+**Auteur :** [Mbassi&Isis]
+**NoteBook :** [cliquer ici pour plus de details]()
 
 ## Sommaire
 1. [Introduction](#introduction)
