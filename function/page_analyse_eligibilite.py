@@ -11,7 +11,7 @@ import random
 def load_data():
     """Charger les données du fichier CSV enrichi"""
     try:
-        df = pd.read_csv('dataset_don_sang_enrichi.csv', encoding='utf-8')
+        df = pd.read_csv('data/processed_data/dataset_don_sang_enrichi.csv', encoding='utf-8')
         return df
     except Exception as e:
         st.error(f"Erreur lors du chargement des données: {e}")

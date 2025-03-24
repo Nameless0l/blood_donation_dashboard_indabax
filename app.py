@@ -31,7 +31,7 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
-df_ = pd.read_csv('dataset_don_sang_enrichi.csv', encoding='utf-8')
+df_ = pd.read_csv('data/processed_data/dataset_don_sang_enrichi.csv', encoding='utf-8')
 raisons_temp = [
         "Raison indisponibilité  [Est sous anti-biothérapie  ]",
         "Raison indisponibilité  [Taux d'hémoglobine bas ]",
@@ -889,7 +889,6 @@ def show_health_conditions(data_dict):
     # Insights et recommandations
     with tab4:
         st.subheader("Insights & Recommandations")
-        
         st.markdown("""
         **Principaux insights :**
         - Les porteurs du VIH, de l'hépatite B ou C sont systématiquement non-éligibles
@@ -943,23 +942,26 @@ def show_campaign_effectiveness(data_dict):
             st.plotly_chart(campaign_figures['monthly_donations_line'], use_container_width=True)
             
         # Métriques clés (fictives ou basées sur les données disponibles)
+        eligibility_counts = data_dict['candidats']['ÉLIGIBILITÉ AU DON.'].value_counts()
+        eligibility_percentage = eligibility_counts / eligibility_counts.sum() * 100
         col1, col2, col3 = st.columns(3)
         with col1:
             st.metric(
                 label="Total des dons", 
-                value="3,852", 
-                delta="↑ 12% vs année précédente"
+                value=f"{eligibility_counts.get('Eligible', 0):,}",
+                delta=f"{eligibility_percentage.get('Eligible', 0):.1f}%", 
+                # delta="↑ 12% vs année précédente"
             )
         with col2:
             st.metric(
                 label="Nouveaux donneurs", 
-                value="1,245", 
+                value="245", 
                 delta="↑ 8% vs année précédente"
             )
         with col3:
             st.metric(
                 label="Taux de retour", 
-                value="42%", 
+                value="14%", 
                 delta="↑ 5% vs année précédente"
             )
     
@@ -1730,7 +1732,12 @@ def show_sentiment_analysis(data_dict):
 def show_eligibility_prediction(data_dict, model, required_columns=None, feature_stats={}):
     """
     Affiche l'interface de prédiction avec règles de sécurité strictes
+    et sauvegarde les données saisies dans le fichier CSV
     """
+    import pandas as pd
+    from datetime import datetime
+    import os
+    
     st.header("🤖 Prédiction d'Éligibilité")
     
     st.markdown("""
@@ -1741,15 +1748,7 @@ def show_eligibility_prediction(data_dict, model, required_columns=None, feature
     if model is None:
         st.warning("Le modèle de prédiction n'est pas disponible.")
         return
-    
-    # Afficher les caractéristiques attendues
-    with st.expander("Caractéristiques attendues par le modèle"):
-        if required_columns:
-            st.write(f"Le modèle utilise {len(required_columns)} caractéristiques:")
-            st.write(", ".join(required_columns))
-        else:
-            st.write("Impossible de déterminer les caractéristiques attendues.")
-    
+
     # Dictionnaire pour stocker les valeurs
     input_values = {}
     
@@ -1826,6 +1825,7 @@ def show_eligibility_prediction(data_dict, model, required_columns=None, feature
             # VIH, hépatite - CRITÈRE D'EXCLUSION ABSOLU
             vih_hbs_hcv = st.checkbox("Porteur de VIH, hépatite B ou C")
             input_values["porteur_vih_hbs_hcv"] = 1 if vih_hbs_hcv else 0
+            input_values["Porteur(HIV,hbs,hcv)_indicateur"] = 1.0 if vih_hbs_hcv else 0.0
             
             # Afficher un avertissement si VIH/hépatite sélectionné
             if vih_hbs_hcv:
@@ -1834,21 +1834,26 @@ def show_eligibility_prediction(data_dict, model, required_columns=None, feature
             # Autres conditions médicales
             diabete = st.checkbox("Diabétique")
             input_values["diabetique"] = 1 if diabete else 0
+            input_values["Diabétique_indicateur"] = 1.0 if diabete else 0.0
             
             hypertension = st.checkbox("Hypertendu")
             input_values["hypertendu"] = 1 if hypertension else 0
+            input_values["Hypertendus_indicateur"] = 1.0 if hypertension else 0.0
             
             asthme = st.checkbox("Asthmatique")
             input_values["asthmatique"] = 1 if asthme else 0
+            input_values["Asthmatiques_indicateur"] = 1.0 if asthme else 0.0
             
             # Critères d'exclusion absolus
             drepanocytaire = st.checkbox("Drépanocytaire")
             input_values["drepanocytaire"] = 1 if drepanocytaire else 0
+            input_values["Drepanocytaire_indicateur"] = 1.0 if drepanocytaire else 0.0
             if drepanocytaire:
                 st.warning("⚠️ Critère d'exclusion absolu : Drépanocytaire")
             
             cardiaque = st.checkbox("Problèmes cardiaques")
             input_values["cardiaque"] = 1 if cardiaque else 0
+            input_values["Cardiaque_indicateur"] = 1.0 if cardiaque else 0.0
             if cardiaque:
                 st.warning("⚠️ Critère d'exclusion absolu : Problèmes cardiaques")
         
@@ -1894,6 +1899,18 @@ def show_eligibility_prediction(data_dict, model, required_columns=None, feature
             input_values["Quartier de Résidence"] = quartier
             input_values["quartier_clean"] = quartier
     
+    # Numéro de téléphone (ajout pour le suivi)
+    telephone = st.text_input("Numéro de téléphone (optionnel)", "")
+    if telephone:
+        try:
+            input_values["Numéro_téléphone"] = int(telephone.replace(" ", ""))
+        except:
+            input_values["Numéro_téléphone"] = None
+    
+    # Consentement pour être recontacté
+    consentement = st.checkbox("Consentement pour être contacté ultérieurement")
+    input_values["Consentement_contact"] = "Oui" if consentement else "Non"
+    
     # Bouton de prédiction avec avertissement pour critères d'exclusion
     if vih_hbs_hcv or drepanocytaire or cardiaque:
         st.warning("⚠️ Des critères d'exclusion absolus ont été détectés. Le donneur sera considéré comme non éligible.")
@@ -1905,10 +1922,16 @@ def show_eligibility_prediction(data_dict, model, required_columns=None, feature
         # Afficher le résultat
         if result == "Éligible":
             st.success(f"Prédiction : {result} (Confiance : {confidence:.1f}%)")
+            input_values["ÉLIGIBILITÉ AU DON."] = "Oui"
+            input_values["eligibilite_code"] = 1
         elif result == "Non éligible":
             st.error(f"Prédiction : {result} (Confiance : {confidence:.1f}%)")
+            input_values["ÉLIGIBILITÉ AU DON."] = "Non"
+            input_values["eligibilite_code"] = 0
         else:
             st.warning(f"Prédiction : {result}")
+            input_values["ÉLIGIBILITÉ AU DON."] = "Indéterminée"
+            input_values["eligibilite_code"] = -1
         
         # Afficher une explication
         st.subheader("Facteurs importants")
@@ -1918,18 +1941,33 @@ def show_eligibility_prediction(data_dict, model, required_columns=None, feature
             factors = []
             if vih_hbs_hcv:
                 factors.append("Porteur de VIH, hépatite B ou C")
+                input_values["Raison de non-eligibilité totale  [Porteur(HIV,hbs,hcv)]"] = "Oui"
             if diabete:
                 factors.append("Diabète")
+                input_values["Raison de non-eligibilité totale  [Diabétique]"] = "Oui"
             if cardiaque:
                 factors.append("Problèmes cardiaques")
+                input_values["Raison de non-eligibilité totale  [Cardiaque]"] = "Oui"
             if drepanocytaire:
                 factors.append("Drépanocytaire")
+                input_values["Raison de non-eligibilité totale  [Drepanocytaire]"] = "Oui"
             if (genre == "Homme" and taux_hemoglobine < 13.0) or (genre == "Femme" and taux_hemoglobine < 12.0):
-                factors.append("Taux d'hémoglobine bas")
+                factors.append("Taux d\u2019h\u00e9moglobine bas")
+                input_values["Raison indisponibilité  [Taux d'hémoglobine bas ]"] = "Oui"
+            if hypertension:
+                input_values["Raison de non-eligibilité totale  [Hypertendus]"] = "Oui"
+            if asthme:
+                input_values["Raison de non-eligibilité totale  [Asthmatiques]"] = "Oui"
+            if transfusion:
+                input_values["Raison de non-eligibilité totale  [Antécédent de transfusion]"] = "Oui"
+            if tatouage:
+                input_values["Raison de non-eligibilité totale  [Tatoué]"] = "Oui"
+            if scarification:
+                input_values["Raison de non-eligibilité totale  [Scarifié]"] = "Oui"
             
             if factors:
                 st.warning(f"Facteur(s) déterminant(s): {', '.join(factors)}")
-            
+        
         # Explication générale
         st.markdown("""
         Les facteurs les plus influents pour l'éligibilité au don de sang sont:
@@ -1938,5 +1976,50 @@ def show_eligibility_prediction(data_dict, model, required_columns=None, feature
         3. **Âge** (entre 18 et 65 ans généralement)
         4. **Expérience de don antérieure**
         """)
+        
+        # Ajouter les champs supplémentaires pour la sauvegarde
+        input_values["Date de remplissage de la fiche"] = datetime.now().strftime("%Y-%m-%d")
+        
+        # Calculer une date de naissance approximative à partir de l'âge
+        annee_actuelle = datetime.now().year
+        annee_naissance = annee_actuelle - age
+        input_values["Date de naissance"] = f"{annee_naissance}-01-01"  # Date approximative
+        
+        # Date du don actuel
+        input_values["Date_don"] = datetime.now().strftime("%Y-%m-%d")
+        
+        # Bouton pour sauvegarder les données
+        if st.button("Enregistrer les données du donneur"):
+            try:
+                # Chemin du fichier CSV
+                csv_path = "data/processed_data/dataset_don_sang_enrichi.csv"
+                
+                # Vérifier si le fichier existe
+                if os.path.exists(csv_path):
+                    # Charger le CSV existant
+                    df_existing = pd.read_csv(csv_path, encoding='utf-8')
+                    
+                    # Créer un DataFrame à partir des données saisies
+                    df_new = pd.DataFrame([input_values])
+                    
+                    # S'assurer que toutes les colonnes du fichier original sont présentes
+                    for col in df_existing.columns:
+                        if col not in df_new.columns:
+                            df_new[col] = None
+                    
+                    # Réordonner les colonnes pour correspondre au fichier original
+                    df_new = df_new[df_existing.columns]
+                    
+                    # Fusionner les DataFrames
+                    df_combined = pd.concat([df_existing, df_new], ignore_index=True)
+                    
+                    # Sauvegarder le fichier combiné
+                    df_combined.to_csv(csv_path, index=False, encoding='utf-8')
+                    
+                    st.success("Les données ont été enregistrées avec succès !")
+                else:
+                    st.error(f"Le fichier {csv_path} n'existe pas. Veuillez vérifier le chemin du fichier.")
+            except Exception as e:
+                st.error(f"Une erreur s'est produite lors de l'enregistrement des données : {str(e)}")
 if __name__ == "__main__":
     main()

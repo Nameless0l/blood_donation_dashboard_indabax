@@ -592,17 +592,7 @@ def create_donor_retention_visualizations(df):
         # Filtrer les valeurs valides
         time_since_donation = df[df['jours_depuis_dernier_don'].notna() & (df['jours_depuis_dernier_don'] >= 0)]
         
-        # Histogramme du temps écoulé depuis le dernier don
-        fig_time_hist = px.histogram(
-            time_since_donation,
-            x='jours_depuis_dernier_don',
-            nbins=20,
-            title='Distribution du temps écoulé depuis le dernier don',
-            labels={'jours_depuis_dernier_don': 'Jours depuis le dernier don', 'count': 'Nombre de donneurs'},
-            color_discrete_sequence=px.colors.sequential.Blues
-        )
-        
-        figures['time_since_donation_hist'] = fig_time_hist
+
         
         # Relation entre le temps écoulé et l'éligibilité
         if 'ÉLIGIBILITÉ AU DON.' in df.columns:
