@@ -3,7 +3,7 @@
 
 **Date :** 23 mars 2025  
 **Auteur :** [Mbassi&Isis]
-**NoteBook :** [cliquer ici pour plus de details]()
+**NoteBook :** [cliquer ici pour plus de details](https://github.com/Nameless0l/blood_donation_dashboard_indabax/blob/main/notebooks/eligibility_model_training.ipynb)
 
 ## Sommaire
 1. [Introduction](#introduction)
@@ -127,21 +127,17 @@ Trois algorithmes d'apprentissage supervisé ont été évalués :
 ### Métriques de performance
 Les performances des trois modèles sur l'ensemble de test :
 
-| Modèle | Accuracy | Precision | Recall | F1 Score | ROC AUC |
-|--------|----------|-----------|--------|----------|---------|
-| Random Forest | [VALEUR] | [VALEUR] | [VALEUR] | [VALEUR] | [VALEUR] |
-| Gradient Boosting | 0.8903 | 0.9162 | 0.9563 | 0.9358 | 0.8816 |
-| XGBoost | [VALEUR] | [VALEUR] | [VALEUR] | [VALEUR] | [VALEUR] |
+[cliquer ici pour plus de details](https://github.com/Nameless0l/blood_donation_dashboard_indabax/blob/main/notebooks/eligibility_model_training.ipynb)
 
 ### Matrices de confusion
 Les matrices de confusion montrent la capacité de chaque modèle à classifier correctement les candidats éligibles et non-éligibles.
 
-*[INSÉRER DESCRIPTION DES MATRICES DE CONFUSION]*
+![alt text](images/image.png)
 
 ### Courbes ROC et Precision-Recall
 Les courbes ROC et Precision-Recall fournissent une visualisation plus complète des performances des modèles à différents seuils de classification.
 
-*[INSÉRER DESCRIPTION DES COURBES]*
+![alt text](images/image-1.png)
 
 ## Modèle retenu : Gradient Boosting
 
@@ -173,17 +169,9 @@ L'analyse des courbes d'apprentissage n'a pas révélé de problème majeur d'ov
 ### Analyse d'importance des caractéristiques
 *[INSÉRER GRAPHIQUE D'IMPORTANCE DES CARACTÉRISTIQUES]*
 
-Les caractéristiques les plus influentes dans la prédiction de l'éligibilité, en ordre décroissant d'importance, sont :
-1. [CARACTÉRISTIQUE 1]
-2. [CARACTÉRISTIQUE 2]
-3. [CARACTÉRISTIQUE 3]
-4. [CARACTÉRISTIQUE 4]
-5. [CARACTÉRISTIQUE 5]
-
+Les caractéristiques les plus influentes dans la prédiction de l'éligibilité, en ordre décroissant d'importance, sont : [cliquer ici pour plus de details](https://github.com/Nameless0l/blood_donation_dashboard_indabax/blob/main/notebooks/eligibility_model_training.ipynb)
 ### Interprétation
-- **[CARACTÉRISTIQUE 1]** : [EXPLICATION]
-- **[CARACTÉRISTIQUE 2]** : [EXPLICATION] 
-- **[CARACTÉRISTIQUE 3]** : [EXPLICATION]
+[cliquer ici pour plus de details](https://github.com/Nameless0l/blood_donation_dashboard_indabax/blob/main/notebooks/eligibility_model_training.ipynb)
 
 Cette analyse confirme l'importance de certains critères médicaux et démographiques dans la détermination de l'éligibilité au don de sang, tout en mettant en évidence des facteurs moins évidents qui pourraient être exploités pour optimiser les campagnes.
 
@@ -232,14 +220,3 @@ L'intégration de ce modèle dans le tableau de bord global fournit un outil pr�
 Les analyses réalisées ont également mis en lumière les facteurs les plus influents dans la détermination de l'éligibilité, offrant des perspectives précieuses pour l'amélioration des campagnes et l'éducation du public.
 
 ---
-
-## Annexes
-
-### A1. Détails des hyperparamètres testés
-*[DÉTAILS DES PLAGES D'HYPERPARAMÈTRES TESTÉES]*
-
-### A2. Courbes d'apprentissage détaillées
-*[GRAPHIQUES DES COURBES D'APPRENTISSAGE]*
-
-### A3. Exploration de données supplémentaire
-*[GRAPHIQUES ET TABLEAUX D'EXPLORATION]*
