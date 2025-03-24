@@ -459,7 +459,6 @@ def display_hemoglobin_bmi_relation(df_filtered):
 # Fonction pour afficher l'analyse de l'éligibilité par profession
 def display_profession_eligibility(df_filtered, indicateurs_disponibles):
     """Afficher l'analyse de l'éligibilité par profession"""
-    st.subheader("Analyse de l'éligibilité par profession")
     
     if 'Profession' in df_filtered.columns and 'eligibilite_code' in df_filtered.columns:
         # Calculer le taux d'éligibilité par profession

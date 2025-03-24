@@ -1,6 +1,7 @@
+# main.py - Fichier principal de l'API
 from fastapi.openapi.docs import get_swagger_ui_html, get_redoc_html
-from fastapi.openapi.utils import get_openapi
 from fastapi.staticfiles import StaticFiles
+from fastapi.openapi.utils import get_openapi
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
@@ -65,8 +66,8 @@ app.add_middleware(
 )
 
 # Chemins vers les fichiers de modèle et statistiques
-MODEL_PATH = ".api/model/eligibility_model_gradient_boosting_20250323_104955.pkl"
-MODEL_INFO_PATH = ".api/model/model_info_20250323_104955.json"
+MODEL_PATH = "./model/eligibility_model_gradient_boosting_20250323_104955.pkl"
+MODEL_INFO_PATH = "./model/model_info_20250323_104955.json"
 
 # Classes pour les entrées et sorties
 class Genre(str, Enum):
@@ -515,8 +516,6 @@ async def get_model_info():
 @app.on_event("startup")
 async def startup_event():
     load_model()
-    
-app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.get("/docs", include_in_schema=False)
 async def custom_swagger_ui_html():
@@ -526,11 +525,7 @@ async def custom_swagger_ui_html():
         oauth2_redirect_url=app.swagger_ui_oauth2_redirect_url,
         swagger_js_url="https://cdn.jsdelivr.net/npm/swagger-ui-dist@4.1.3/swagger-ui-bundle.js",
         swagger_css_url="https://cdn.jsdelivr.net/npm/swagger-ui-dist@4.1.3/swagger-ui.css",
-        swagger_ui_parameters={
-            "docExpansion": "none",
-            "defaultModelsExpandDepth": -1,
-            "syntaxHighlight": {"theme": "monokai"},
-            "customSiteTitle": "API Don de Sang",
+         swagger_ui_parameters={
             "customCss": """
                 .topbar-wrapper img[alt="Swagger UI"] {
                     content: url("/static/logo.png");
@@ -539,28 +534,6 @@ async def custom_swagger_ui_html():
                 }
                 .swagger-ui .topbar {
                     background-color: #9c1d1d;
-                }
-                .swagger-ui .opblock-tag {
-                    color: #9c1d1d;
-                    font-weight: bold;
-                }
-
-                /* Personnaliser les boutons */
-                .swagger-ui .btn.execute {
-                    background-color: #9c1d1d;
-                    color: white;
-                    border-color: #9c1d1d;
-                }
-
-                /* Personnaliser les boîtes de requête */
-                .swagger-ui .opblock.opblock-post {
-                    border-color: #9c1d1d;
-                    background: rgba(156, 29, 29, 0.1);
-                }
-
-                /* Personnaliser la police */
-                .swagger-ui, .swagger-ui .opblock-summary-description {
-                    font-family: 'Arial', sans-serif;
                 }
             """
         }

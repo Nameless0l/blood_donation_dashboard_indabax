@@ -20,7 +20,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.metrics import accuracy_score, classification_report
 from function.visualizations import (create_geographic_visualizations, create_health_condition_visualizations,
-                            create_donor_profiling_visualizations, create_campaign_effectiveness_visualizations,
+                            create_campaign_effectiveness_visualizations,
                             create_donor_retention_visualizations, create_sentiment_analysis_visualizations)
 from function.page_analyse_eligibilite import(display_profession_eligibility,display_ineligibility_reasons,get_available_health_indicators)
 from function.page_analyse_donneurs import (analyse_donneurs)
