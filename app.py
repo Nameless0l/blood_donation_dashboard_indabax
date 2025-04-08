@@ -19,6 +19,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.metrics import accuracy_score, classification_report
+from function.utils import get_emoji_size
 from function.visualizations import (create_geographic_visualizations, create_health_condition_visualizations,
                             create_campaign_effectiveness_visualizations,
                             create_donor_retention_visualizations, create_sentiment_analysis_visualizations)
@@ -569,66 +570,109 @@ def show_geographic_distribution(data_dict):
     geo_figures = create_geographic_visualizations(data_dict['candidats'])
     
     # Onglet 1: Répartition des donneurs
-    with tab1:
-        st.subheader("Répartition des donneurs par zone géographique")
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            if 'arrondissement_bar' in geo_figures:
-                st.plotly_chart(geo_figures['arrondissement_bar'], use_container_width=True)
-        
-        with col2:
-            if 'quartier_bar' in geo_figures:
-                st.plotly_chart(geo_figures['quartier_bar'], use_container_width=True)
-        
-        if 'arrond_eligibility_heatmap' in geo_figures:
-            st.plotly_chart(geo_figures['arrond_eligibility_heatmap'], use_container_width=True)
-        
-        # Carte interactive
-        st.subheader("Carte Interactive des Donneurs")
-        
-        # Exemple de carte choroplèthe simplifiée (utilisant des données fictives)
-        m = folium.Map(location=[4.0511, 9.7679], zoom_start=11)  # Coordonnées approximatives de Douala
+        # Carte interactive avec des émojis goutte de sang
+    st.subheader("Carte Interactive des Donneurs")
 
-        # Ajouter un titre à la carte
-        title_html = '''
-            <h3 align="center" style="font-size:16px"><b>Répartition des Donneurs à Douala</b></h3>
-        '''
-        m.get_root().html.add_child(folium.Element(title_html))
-        
-        # Ajouter des marqueurs fictifs pour les principaux arrondissements
-        arrondissements_coords = {
-            'Douala 1': [4.0494, 9.7143],
-            'Douala 2': [4.0611, 9.7179],
-            'Douala 3': [4.0928, 9.7679],
-            'Douala 4': [4.0711, 9.7543],
-            'Douala 5': [4.0128, 9.7379]
-        }
+    # Créer la carte de base
+    m = folium.Map(location=[4.0511, 9.7679], zoom_start=11)  # Coordonnées de Douala
 
-        # Extraire les données d'arrondissement
-        if 'arrondissement_clean' in data_dict['candidats'].columns:
-            arrond_counts = data_dict['candidats']['arrondissement_clean'].value_counts().to_dict()
+    # Titre de la carte
+    title_html = '''
+        <h3 align="center" style="font-size:16px"><b>Répartition des Donneurs à Douala</b></h3>
+    '''
+    m.get_root().html.add_child(folium.Element(title_html))
+
+    # Coordonnées des arrondissements
+    arrondissements_coords = {
+        'Douala 1': [4.0494, 9.7143],
+        'Douala 2': [4.0611, 9.7179],
+        'Douala 3': [4.0928, 9.7679],
+        'Douala 4': [4.0711, 9.7543],
+        'Douala 5': [4.0128, 9.7379]
+    }
+
+    # Si les données d'arrondissement existent
+    if 'arrondissement_clean' in data_dict['candidats'].columns:
+        arrond_counts = data_dict['candidats']['arrondissement_clean'].value_counts().to_dict()
+        
+        # Créer une échelle de taille basée sur les données
+        min_count = min(arrond_counts.values()) if arrond_counts else 0
+        max_count = max(arrond_counts.values()) if arrond_counts else 1
+        
+        
+        # Ajouter les marqueurs pour chaque arrondissement
+        for arrond, coords in arrondissements_coords.items():
+            count = arrond_counts.get(arrond, 0)
+            emoji_size = get_emoji_size(count, min_count, max_count)
             
-            for arrond, coords in arrondissements_coords.items():
-                count = arrond_counts.get(arrond, 0)
-                popup_text = f"<b>{arrond}</b><br>Nombre de donneurs: {count}"
-                
-                # Ajuster la taille du cercle en fonction du nombre de donneurs
-                radius = 500 + (count / 10)
-                
-                folium.Circle(
-                    location=coords,
-                    radius=radius,
-                    popup=popup_text,
-                    color='crimson',
-                    fill=True,
-                    fill_color='crimson',
-                    fill_opacity=0.6
-                ).add_to(m)
+            # Popup détaillée
+            popup = folium.Popup(
+                f"""
+                <div style="text-align: center;">
+                    <h4 style="margin-bottom: 5px; color: #cc0000;">{arrond}</h4>
+                    <p style="font-size: 16px; margin-top: 5px;">
+                        <b>{count}</b> donneurs de sang
+                    </p>
+                </div>
+                """, 
+                max_width=200
+            )
+            
+            # Utiliser l'emoji goutte de sang avec taille variable
+            emoji_html = f"""
+                <div style="font-size: {emoji_size}px; text-align: center; cursor: pointer;">
+                    🩸
+                </div>
+            """
+            
+            # Créer le marqueur avec l'icône personnalisée
+            icon = folium.DivIcon(
+                icon_size=(emoji_size, emoji_size),
+                icon_anchor=(emoji_size/2, emoji_size/2),
+                html=emoji_html
+            )
+            
+            folium.Marker(
+                location=coords,
+                popup=popup,
+                icon=icon,
+                tooltip=f"<b>{arrond}</b>: {count} donneurs"  # Affichage au survol
+            ).add_to(m)
         
-        # Afficher la carte
-        folium_static(m)
-    
+        # Ajouter une légende avec des émojis
+        legend_html = """
+        <div style="position: fixed; bottom: 50px; right: 50px; z-index: 1000; background-color: white; 
+                    padding: 10px; border: 1px solid #ddd; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.1);">
+            <p style="text-align: center; font-weight: bold; margin-bottom: 8px; color: #cc0000;">
+                Nombre de donneurs
+            </p>
+            
+            <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                <span style="font-size: 18px; margin-right: 10px;">🩸</span>
+                <span>Moins de donneurs</span>
+            </div>
+            
+            <div style="display: flex; align-items: center;">
+                <span style="font-size: 36px; margin-right: 10px;">🩸</span>
+                <span>Plus de donneurs</span>
+            </div>
+        </div>
+        """
+        m.get_root().html.add_child(folium.Element(legend_html))
+
+        # Ajouter du CSS pour l'effet de survol sur les émojis
+        hover_css = """
+        <style>
+            .leaflet-marker-icon:hover {
+                transform: scale(1.2);
+                transition: transform 0.3s ease;
+            }
+        </style>
+        """
+        m.get_root().html.add_child(folium.Element(hover_css))
+
+    # Afficher la carte dans Streamlit
+    folium_static(m)
     # Onglet 2: Fidélité par zone
     with tab2:
         st.subheader("Analyse de la fidélité des donneurs par zone")
