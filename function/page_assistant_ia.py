@@ -506,7 +506,7 @@ def assistant_ia(df):
         image_base64 = base64.b64encode(image_bytes).decode('utf-8')
         
         # Afficher l'image
-        st.image(uploaded_file, caption="Image téléchargée", use_column_width=True)
+        st.image(uploaded_file, caption="Image téléchargée", use_container_width=True)
     
     # Entrée utilisateur
     prompt = st.chat_input("Posez votre question sur les données de don de sang...")
