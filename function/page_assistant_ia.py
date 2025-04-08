@@ -499,18 +499,18 @@ def assistant_ia(df):
     # Option de téléchargement d'image
     uploaded_file = st.file_uploader("Télécharger une image à analyser (optionnel)", type=["jpg", "jpeg", "png"])
     image_base64 = None
-    
+
     if uploaded_file is not None:
         # Convertir l'image en base64
         image_bytes = uploaded_file.getvalue()
         image_base64 = base64.b64encode(image_bytes).decode('utf-8')
-        
+
         # Afficher l'image
         st.image(uploaded_file, caption="Image téléchargée", use_container_width=True)
-    
+
     # Entrée utilisateur
     prompt = st.chat_input("Posez votre question sur les données de don de sang...")
-    
+
     if prompt:
         # Afficher la question de l'utilisateur
         display_chat_message("user", prompt)

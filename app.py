@@ -441,7 +441,7 @@ def main():
     section = st.sidebar.radio(
         "Choisissez une section :",
         [
-            "📍 Répartition Géographique",
+            "🌍 Répartition Géographique",
             "🏥 Conditions de Santé & Éligibilité",
             "🔬 Profilage des Donneurs",
             "📊 Efficacité des Campagnes",
@@ -524,7 +524,7 @@ def main():
             model, expected_features, feature_stats = train_eligibility_model(data_dict['candidats'])
             
             # Afficher la section sélectionnée
-            if section == "📍 Répartition Géographique":
+            if section == "🌍 Répartition Géographique":
                 show_geographic_distribution(data_dict)
             elif section == "🏥 Conditions de Santé & Éligibilité":
                 show_health_conditions(data_dict)
@@ -554,7 +554,7 @@ raisons_temp_disponibles = [col for col in raisons_temp if col in df_filtered.co
 raisons_def_disponibles = [col for col in raisons_def if col in df_filtered.columns]
 def show_geographic_distribution(data_dict):
     """Affiche la section de répartition géographique des donneurs"""
-    st.header("📍 Cartographie de la Répartition des Donneurs")
+    st.header("🌍 Cartographie de la Répartition des Donneurs")
     
     st.markdown("""
     Cette section vous permet de visualiser la répartition géographique des donneurs de sang
@@ -578,7 +578,7 @@ def show_geographic_distribution(data_dict):
     st.subheader("Carte Interactive des Donneurs")
 
     # Créer la carte de base
-    m = folium.Map(location=[4.0511, 9.7679], zoom_start=11)  # Coordonnées de Douala
+    m = folium.Map(location=[4.0511, 9.7679], zoom_start=13)
 
     # Titre de la carte
     title_html = '''
