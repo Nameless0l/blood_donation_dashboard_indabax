@@ -16,6 +16,7 @@ from plotly.subplots import make_subplots
 from streamlit_folium import folium_static
 from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestClassifier
+from function.page_assistant_ia import assistant_ia
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.metrics import accuracy_score, classification_report
@@ -446,7 +447,8 @@ def main():
             "📊 Efficacité des Campagnes",
             "🔄 Fidélisation des Donneurs",
             "💬 Analyse de Sentiment",
-            "🤖 Prédiction d'Éligibilité"
+            "🤖 Prédiction d'Éligibilité",
+            "🩸 Assistant IA"
         ]
     )
     
@@ -536,6 +538,8 @@ def main():
                 show_sentiment_analysis(data_dict)
             elif section == "🤖 Prédiction d'Éligibilité":
                 show_eligibility_prediction(data_dict, model)
+            elif section == "🩸 Assistant IA":
+                assistant_ia(data_dict['candidats'])
         elif section == "🤖 Prédiction d'Éligibilité":
             show_eligibility_prediction(data_dict, model, expected_features, feature_stats)
         else:
@@ -2065,5 +2069,25 @@ def show_eligibility_prediction(data_dict, model, required_columns=None, feature
                     st.error(f"Le fichier {csv_path} n'existe pas. Veuillez vérifier le chemin du fichier.")
             except Exception as e:
                 st.error(f"Une erreur s'est produite lors de l'enregistrement des données : {str(e)}")
+        
+    if st.button("Télécharger le dataset enrichi"):
+        try:
+            # Chemin du fichier CSV
+            csv_path = "data/processed_data/dataset_don_sang_enrichi.csv"
+            
+            # Vérifier si le fichier existe
+            if os.path.exists(csv_path):
+                with open(csv_path, "rb") as file:
+                    st.download_button(
+                        label="Télécharger le dataset enrichi",
+                        data=file,
+                        file_name="dataset_don_sang.csv",
+                        mime="text/csv"
+                    )
+            else:
+                st.error(f"Le fichier {csv_path} n'existe pas. Veuillez vérifier le chemin du fichier.")
+        except Exception as e:
+            st.error(f"Une erreur s'est produite lors du téléchargement : {str(e)}")
+
 if __name__ == "__main__":
     main()
