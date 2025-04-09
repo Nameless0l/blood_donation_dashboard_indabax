@@ -870,8 +870,7 @@ def display_ineligibility_by_gender(df_filtered, all_reasons_df, raisons_temp_di
     
     st.plotly_chart(fig_genre, use_container_width=True)
     
-    # Ajouter un avertissement que les données sont simulées
-    st.info("Note: Les données par genre sont simulées de manière aléatoire et ne reflètent pas les données réelles.")
+
 
 # Fonction pour afficher les tendances temporelles
 def display_temporal_trends(df_filtered, raisons_temp_disponibles, raisons_def_disponibles, all_reasons_df):

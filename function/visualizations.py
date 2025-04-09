@@ -130,9 +130,9 @@ def create_health_condition_visualizations(df):
             
             # Calculer les pourcentages d'éligibilité pour chaque groupe
             if len(condition_pos) > 0:
-                eligible_pos = (condition_pos['eligibilite_code'] == 1).mean() * 100
-                temp_eligible_pos = (condition_pos['eligibilite_code'] == 0).mean() * 100
-                non_eligible_pos = (condition_pos['eligibilite_code'] == -1).mean() * 100
+                eligible_pos = (condition_pos['eligibilite_code'] == 1).sum()
+                temp_eligible_pos = (condition_pos['eligibilite_code'] == 0).sum()
+                non_eligible_pos = (condition_pos['eligibilite_code'] == -1).sum()
                 
                 health_impact_data.append({
                     'Condition': condition_name,
@@ -140,7 +140,7 @@ def create_health_condition_visualizations(df):
                     'Éligible': eligible_pos,
                     'Temporairement Non-éligible': temp_eligible_pos,
                     'Définitivement Non-éligible': non_eligible_pos,
-                    'Nombre': len(condition_pos)
+                    'Nombre total': len(condition_pos)
                 })
             
             if len(condition_neg) > 0:

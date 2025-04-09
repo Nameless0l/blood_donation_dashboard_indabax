@@ -421,12 +421,12 @@ def main():
     # Titre et introduction
     st.title("🩸 Tableau de Bord de la Campagne de Don de Sang")
     
-    st.markdown("""
-    Ce tableau de bord vous permet d'analyser les données des campagnes de don de sang pour optimiser vos futures initiatives.
-    Explorez les différentes sections pour découvrir des insights sur la répartition géographique des donneurs,
-    l'impact des conditions de santé sur l'éligibilité, le profil des donneurs idéaux, l'efficacité des campagnes,
-    et les facteurs de fidélisation des donneurs.
-    """)
+    # st.markdown("""
+    # Ce tableau de bord vous permet d'analyser les données des campagnes de don de sang pour optimiser vos futures initiatives.
+    # Explorez les différentes sections pour découvrir des insights sur la répartition géographique des donneurs,
+    # l'impact des conditions de santé sur l'éligibilité, le profil des donneurs idéaux, l'efficacité des campagnes,
+    # et les facteurs de fidélisation des donneurs.
+    # """)
     
     uploaded_file = st.sidebar.file_uploader("Charger un fichier de données", type=['xlsx', 'csv'])
     
@@ -864,8 +864,6 @@ def show_health_conditions(data_dict):
     
     st.markdown("""
     Cette section analyse l'impact des conditions de santé sur l'éligibilité au don de sang.
-    Les visualisations ci-dessous vous permettent de comprendre quelles conditions médicales
-    influencent le plus l'éligibilité des donneurs.
     """)
     
     # Créer les onglets
@@ -1862,6 +1860,11 @@ def show_eligibility_prediction(data_dict, model, required_columns=None, feature
             # Nationalité
             nationalite = st.selectbox("Nationalité", ["Camerounaise", "Autre"])
             input_values["Nationalité"] = nationalite
+            
+            # Groupe sanguin (ajouté pour la recherche)
+            groupe_sanguin = st.selectbox("Groupe sanguin", 
+                                          ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-", "Non précisé"])
+            input_values["Groupe sanguin"] = groupe_sanguin
     
     # Onglet 2: Santé
     with tabs[1]:
@@ -1967,6 +1970,9 @@ def show_eligibility_prediction(data_dict, model, required_columns=None, feature
         # Faire la prédiction avec les règles de sécurité
         result, confidence = predict_eligibility(model, input_values, required_columns, feature_stats)
         
+        # Stocker la confiance pour le classement ultérieur (pour la recherche)
+        input_values["confidence_score"] = confidence
+        
         # Afficher le résultat
         if result == "Éligible":
             st.success(f"Prédiction : {result} (Confiance : {confidence:.1f}%)")
@@ -2069,25 +2075,150 @@ def show_eligibility_prediction(data_dict, model, required_columns=None, feature
                     st.error(f"Le fichier {csv_path} n'existe pas. Veuillez vérifier le chemin du fichier.")
             except Exception as e:
                 st.error(f"Une erreur s'est produite lors de l'enregistrement des données : {str(e)}")
+    
+    # CORRECTION 1: Utiliser directement st.download_button au lieu d'un bouton intermédiaire
+    try:
+        # Chemin du fichier CSV
+        csv_path = "data/processed_data/dataset_don_sang_enrichi.csv"
         
-    if st.button("Télécharger le dataset enrichi"):
-        try:
-            # Chemin du fichier CSV
-            csv_path = "data/processed_data/dataset_don_sang_enrichi.csv"
+        # Vérifier si le fichier existe
+        if os.path.exists(csv_path):
+            with open(csv_path, "rb") as file:
+                # AMÉLIORATION 2: Ajouter la date et l'heure au nom du fichier
+                current_datetime = datetime.now().strftime("%Y%m%d_%H%M%S")
+                file_name = f"dataset_don_sang_{current_datetime}.csv"
+                
+                st.download_button(
+                    label="Télécharger le dataset enrichi",
+                    data=file,
+                    file_name=file_name,
+                    mime="text/csv"
+                )
+        else:
+            st.error(f"Le fichier {csv_path} n'existe pas. Veuillez vérifier le chemin du fichier.")
+    except Exception as e:
+        st.error(f"Une erreur s'est produite lors du téléchargement : {str(e)}")
+    
+    # AMÉLIORATION 3: Ajout de la recherche de profils de donneurs éligibles
+    st.header("🔍 Recherche de Donneurs Éligibles")
+    
+    st.markdown("""
+    Cette section vous permet de rechercher les profils de donneurs les plus éligibles 
+    en fonction de critères spécifiques.
+    """)
+    
+    # Définir la fonction de recherche
+    def search_eligible_donors(dataset_path, criteria):
+        """
+        Recherche les donneurs les plus éligibles dans le dataset selon les critères.
+        
+        Args:
+            dataset_path (str): Chemin vers le fichier CSV
+            criteria (dict): Critères de recherche (âge, groupe sanguin, quartier, ville)
             
-            # Vérifier si le fichier existe
-            if os.path.exists(csv_path):
-                with open(csv_path, "rb") as file:
-                    st.download_button(
-                        label="Télécharger le dataset enrichi",
-                        data=file,
-                        file_name="dataset_don_sang.csv",
-                        mime="text/csv"
-                    )
-            else:
-                st.error(f"Le fichier {csv_path} n'existe pas. Veuillez vérifier le chemin du fichier.")
+        Returns:
+            pd.DataFrame: Les 5 profils les plus éligibles
+        """
+        try:
+            # Charger le dataset
+            df = pd.read_csv(dataset_path, encoding='utf-8')
+            
+            # Filtrer pour ne garder que les donneurs éligibles
+            eligible_donors = df[df["ÉLIGIBILITÉ AU DON."] == "Oui"]
+            
+            # Appliquer les filtres si spécifiés
+            if criteria.get("age_min") and criteria.get("age_max"):
+                eligible_donors = eligible_donors[(eligible_donors["age"] >= criteria["age_min"]) & 
+                                                 (eligible_donors["age"] <= criteria["age_max"])]
+            
+            if criteria.get("groupe_sanguin") and criteria["groupe_sanguin"] != "Tous":
+                eligible_donors = eligible_donors[eligible_donors["Groupe sanguin"] == criteria["groupe_sanguin"]]
+                
+            if criteria.get("quartier") and criteria["quartier"] != "Tous":
+                eligible_donors = eligible_donors[eligible_donors["quartier_clean"].str.lower() == 
+                                                 criteria["quartier"].lower()]
+                
+            if criteria.get("ville") and criteria["ville"] != "Tous":
+                eligible_donors = eligible_donors[eligible_donors["arrondissement_clean"].str.contains(
+                                                 criteria["ville"], case=False)]
+            
+            # Trier par priorité (si un score de confiance existe)
+            if "confidence_score" in eligible_donors.columns:
+                eligible_donors = eligible_donors.sort_values(by="confidence_score", ascending=False)
+            
+            # Prendre les 5 premiers résultats
+            top_donors = eligible_donors.head(5)
+            
+            return top_donors
+            
         except Exception as e:
-            st.error(f"Une erreur s'est produite lors du téléchargement : {str(e)}")
+            st.error(f"Erreur lors de la recherche: {str(e)}")
+            return pd.DataFrame()  # Retourner un DataFrame vide en cas d'erreur
+    
+    # Interface de recherche
+    search_col1, search_col2 = st.columns(2)
+    
+    with search_col1:
+        age_min = st.number_input("Âge minimum", min_value=18, max_value=65, value=18)
+        age_max = st.number_input("Âge maximum", min_value=18, max_value=65, value=65)
+        
+        # On supposera que le groupe sanguin est stocké dans le dataset
+        groupe_sanguin_recherche = st.selectbox("Groupe sanguin", 
+                                    ["Tous", "A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"])
+    
+    with search_col2:
+        quartier_recherche = st.text_input("Quartier", "Tous")
+        ville_recherche = st.selectbox("Ville/Arrondissement", 
+                            ["Tous", "Douala 1", "Douala 2", "Douala 3", "Douala 4", "Douala 5", 
+                             "Douala (Non précisé)", "Autre"])
+    
+    # Bouton de recherche
+    if st.button("Rechercher des donneurs"):
+        # Préparer les critères
+        search_criteria = {
+            "age_min": age_min,
+            "age_max": age_max,
+            "groupe_sanguin": groupe_sanguin_recherche,
+            "quartier": quartier_recherche,
+            "ville": ville_recherche
+        }
+        
+        # Chemin du dataset
+        dataset_path = "data/processed_data/dataset_don_sang_enrichi.csv"
+        
+        # Effectuer la recherche
+        results = search_eligible_donors(dataset_path, search_criteria)
+        
+        # Afficher les résultats
+        if not results.empty:
+            st.success(f"{len(results)} donneur(s) éligible(s) trouvé(s)")
+            
+            # Colonnes à afficher (nous pouvons les ajuster selon les besoins)
+            display_columns = ["age", "Genre", "Groupe sanguin", "quartier_clean", 
+                               "arrondissement_clean", "Taux d\u2019h\u00e9moglobine", "Numéro_téléphone"]
+            
+            # S'assurer que toutes les colonnes existent
+            existing_columns = [col for col in display_columns if col in results.columns]
+            
+            # Renommer les colonnes pour l'affichage
+            column_names = {
+                "age": "Âge",
+                "Genre": "Genre",
+                "Groupe sanguin": "Groupe sanguin",
+                "quartier_clean": "Quartier",
+                "arrondissement_clean": "Arrondissement",
+                "Taux d\u2019h\u00e9moglobine": "Taux d'hémoglobine",
+                "Numéro_téléphone": "Téléphone"
+            }
+            
+            # Filtrer et renommer
+            display_df = results[existing_columns].rename(columns=column_names)
+            
+            # Afficher le tableau
+            st.dataframe(display_df)
+        else:
+            st.warning("Aucun donneur éligible ne correspond à ces critères.")
+
 
 if __name__ == "__main__":
     main()
