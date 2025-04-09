@@ -208,7 +208,8 @@ def process_gemini_response(prompt, chat_history=None, image_base64=None, temper
 def display_chat_message(role, content, avatar=None):
     """Affiche un message de chat avec style."""
     if role == "assistant":
-        with st.chat_message(role, avatar="🩸"):
+        assistant_avatar = Image.open("images/bot.png")
+        with st.chat_message(role, avatar=assistant_avatar):
             st.write(content)
     else:
         with st.chat_message(role, avatar="👨‍⚕️"):
@@ -436,7 +437,7 @@ def demo_response(question):
 
 def assistant_ia(df):
     """Interface principale pour l'assistant IA."""
-    st.title("💬 Assistant IA d'Analyse des Dons de Sang")
+    st.title("📱 Assistant IA d'Analyse des Dons de Sang")
     if df is None:
         st.warning("Les données n'ont pas pu être chargées correctement.")
         df = pd.DataFrame() 
@@ -452,11 +453,7 @@ def assistant_ia(df):
         ```
         """)
     
-    st.markdown("""
-    Posez-moi vos questions sur les données de la campagne de don de sang. 
-    Je peux vous aider à interpréter les graphiques, à identifier des tendances, 
-    ou à formuler des recommandations basées sur les données.
-    """)
+
     
     # Configuration de la clé API si besoin
     if GEMINI_AVAILABLE:
@@ -474,8 +471,7 @@ def assistant_ia(df):
         welcome_message = f"""
         👋 Bonjour! Je suis Dr. Hemo, votre assistant IA pour l'analyse des données de don de sang.
         
-        Je peux vous aider à comprendre les tendances, analyser les profils des donneurs, 
-        et proposer des stratégies pour améliorer vos futures campagnes.
+        Posez-moi vos questions sur les données de la campagne de don de sang. Je peux vous aider à interpréter les graphiques, à identifier des tendances, ou à formuler des recommandations basées sur les données.
         
         **Le saviez-vous?** {generate_blood_fact()}
         

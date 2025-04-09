@@ -6,6 +6,7 @@ import joblib
 import tempfile
 import numpy as np
 import pandas as pd
+from PIL import Image
 import streamlit as st
 import plotly.express as px
 import plotly.graph_objects as go
@@ -27,9 +28,10 @@ from function.visualizations import (create_geographic_visualizations, create_he
 from function.page_analyse_eligibilite import(display_profession_eligibility,display_ineligibility_reasons,get_available_health_indicators)
 from function.page_analyse_donneurs import (analyse_donneurs)
 # Configuration de la page
+logo = Image.open("images/logo.png")
 st.set_page_config(
     page_title="Tableau de Bord - Campagne de Don de Sang",
-    page_icon="🩸",
+    page_icon=logo,
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -419,8 +421,22 @@ def main():
     </style>
     """, unsafe_allow_html=True)
     # Titre et introduction
-    st.title("🩸 Tableau de Bord de la Campagne de Don de Sang")
     
+    import base64
+
+    def get_base64_image(image_path):
+        with open(image_path, "rb") as img_file:
+            return base64.b64encode(img_file.read()).decode()
+
+    # Remplacez par le chemin de votre logo
+    logo_base64 = get_base64_image("images/logo.png")
+
+    st.markdown(f'''
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <img src="data:image/png;base64,{logo_base64}" width="50px">
+            <h1 style="margin: 0;">Tableau de Bord de la Campagne de Don de Sang</h1>
+        </div>
+    ''', unsafe_allow_html=True)
     # st.markdown("""
     # Ce tableau de bord vous permet d'analyser les données des campagnes de don de sang pour optimiser vos futures initiatives.
     # Explorez les différentes sections pour découvrir des insights sur la répartition géographique des donneurs,
@@ -438,6 +454,7 @@ def main():
     data_dict = load_data(file_path, uploaded_file)
     st.sidebar.title("Navigation")
     # Options de navigation (maintenant avant les filtres)
+    
     section = st.sidebar.radio(
         "Choisissez une section :",
         [
@@ -448,7 +465,7 @@ def main():
             "🔄 Fidélisation des Donneurs",
             "💬 Analyse de Sentiment",
             "🤖 Prédiction d'Éligibilité",
-            "🩸 Assistant IA"
+            "📱 Assistant IA"
         ]
     )
     
@@ -538,7 +555,7 @@ def main():
                 show_sentiment_analysis(data_dict)
             elif section == "🤖 Prédiction d'Éligibilité":
                 show_eligibility_prediction(data_dict, model)
-            elif section == "🩸 Assistant IA":
+            elif section ==  "📱 Assistant IA":
                 assistant_ia(data_dict['candidats'])
         elif section == "🤖 Prédiction d'Éligibilité":
             show_eligibility_prediction(data_dict, model, expected_features, feature_stats)
@@ -844,7 +861,7 @@ def show_geographic_distribution(data_dict):
 
     with tab5:
     # Ajout d'un pied de page avec insights et recommandations
-        st.subheader("Insights & Recommandations")
+        # st.subheader("Insights & Recommandations")
         
         st.markdown("""
         **Principaux insights :**
@@ -924,7 +941,6 @@ def show_health_conditions(data_dict):
     
     # Raisons d'inéligibilité
     with tab2:
-        st.subheader("Raisons d'inéligibilité")
         display_ineligibility_reasons(df_filtered, raisons_temp_disponibles, raisons_def_disponibles)
     
     # Éligibilité par profession
@@ -934,7 +950,7 @@ def show_health_conditions(data_dict):
     
     # Insights et recommandations
     with tab4:
-        st.subheader("Insights & Recommandations")
+        # st.subheader("Insights & Recommandations")
         st.markdown("""
         **Principaux insights :**
         - Les porteurs du VIH, de l'hépatite B ou C sont systématiquement non-éligibles
@@ -1059,7 +1075,7 @@ def show_campaign_effectiveness(data_dict):
     
     # Onglet 4: Insights & Recommandations
     with tab4:
-        st.subheader("Insights & Recommandations")
+        # st.subheader("Insights & Recommandations")
         
         col1, col2 = st.columns(2)
         

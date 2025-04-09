@@ -713,7 +713,7 @@ def analyse_donneurs(df):
     
     # Tab 4: Analyse des sentiments
     with tab4:
-        st.subheader("Analyse des sentiments des donneurs")
+        # st.subheader("Analyse des sentiments des donneurs")
         
         # Vérifier s'il y a des colonnes de satisfaction
         satisfaction_cols = [
@@ -927,7 +927,7 @@ def analyse_donneurs(df):
         else:
             st.info("Données insuffisantes pour l'analyse des sentiments des donneurs.")
     with tab5:
-        st.subheader("Insights & Recommandations")
+        # st.subheader("Insights & Recommandations")
         
         col1, col2 = st.columns(2)
         
